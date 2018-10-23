@@ -1,6 +1,7 @@
 package com.tterrag.chatmux.config;
 
 import com.electronwill.nightconfig.core.conversion.Conversion;
+import com.tterrag.chatmux.util.ServiceType;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

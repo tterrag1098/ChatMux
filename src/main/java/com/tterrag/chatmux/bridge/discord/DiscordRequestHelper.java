@@ -12,6 +12,7 @@ import com.tterrag.chatmux.bridge.discord.response.WebhookObject;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -64,11 +65,11 @@ public class DiscordRequestHelper extends RequestHelper {
                 }));
     }
     
-    public void executeWebhook(WebhookObject webhook, String payload) {
-        executeWebhook(webhook.id, webhook.token, payload);
+    public Disposable executeWebhook(WebhookObject webhook, String payload) {
+        return executeWebhook(webhook.id, webhook.token, payload);
     }
     
-    public void executeWebhook(long id, String token, String payload) {
-        postVoid("/webhooks/" + id + "/" + token, payload);
+    public Disposable executeWebhook(long id, String token, String payload) {
+        return postVoid("/webhooks/" + id + "/" + token, payload);
     }
 }

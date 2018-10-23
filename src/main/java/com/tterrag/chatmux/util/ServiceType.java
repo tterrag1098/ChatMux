@@ -1,4 +1,4 @@
-package com.tterrag.chatmux.config;
+package com.tterrag.chatmux.util;
 
 import java.util.Locale;
 

@@ -11,21 +11,35 @@ import lombok.ToString;
 @Getter
 public class ServiceData {
     
-    String token;
-    
-    @EqualsAndHashCode(callSuper = true)
-    @ToString(callSuper = true)
+    @EqualsAndHashCode
+    @ToString
     @Getter
-    public static class TwitchData extends ServiceData {
+    public static class Discord {
+        
+        private String token;
+        
+    }
+    
+    @EqualsAndHashCode
+    @ToString
+    @Getter
+    public static class Twitch {
+        
+        private String token;
         
         private String nick;
         
     }
 
-    @EqualsAndHashCode(callSuper = true)
-    @ToString(callSuper = true)
+    @EqualsAndHashCode
+    @ToString
     @Getter
-    public static class MixerData extends ServiceData {
+    public static class Mixer {
+        
+        private String token;
+        
+        @Path("user_id")
+        private int userId;
         
         @Path("client_id")
         private String clientId;

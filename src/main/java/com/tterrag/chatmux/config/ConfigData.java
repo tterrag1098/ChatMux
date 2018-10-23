@@ -11,11 +11,11 @@ public class ConfigData {
     
     private AdminData admin;
     
-    private ServiceData discord;
+    private ServiceData.Discord discord;
     
-    private ServiceData.TwitchData twitch;
+    private ServiceData.Twitch twitch;
     
-    private ServiceData.MixerData mixer;
+    private ServiceData.Mixer mixer;
     
     private PermissionData permissions;
 
