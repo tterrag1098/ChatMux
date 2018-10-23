@@ -1,7 +1,9 @@
 package com.tterrag.chatmux.bridge.discord;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +13,6 @@ import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.mixer.response.ChatResponse;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
-import com.tterrag.chatmux.links.ChatSource;
 import com.tterrag.chatmux.links.ChatSource.MixerSource;
 import com.tterrag.chatmux.links.ChatSource.TwitchSource;
 import com.tterrag.chatmux.links.Message;
@@ -31,19 +32,12 @@ public class DiscordCommandHandler {
     // FIXME TEMP
     private final DecoratedGatewayClient discord;
     
-    private final WebSocketClient<MixerEvent, MixerMethod> mixer;
+    private final Map<Integer, WebSocketClient<MixerEvent, MixerMethod>> mixer = new HashMap<>();
     private final WebSocketClient<IRCEvent, String> twitch;
 
     public DiscordCommandHandler(DecoratedGatewayClient client, String token, ObjectMapper mapper) {
         this.discord = client;
         this.helper = new DiscordRequestHelper(mapper, token);
-        
-        mixer = new SimpleWebSocketClient<>();
-        
-        MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
-        mrh.get("/chats/148199", ChatResponse.class)
-            .flatMap(chat -> mixer.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper())))
-            .subscribe();
         
 //        System.out.println(mrh.post("/oauth/token/introspect", "{\"token\":\"" + config.getMixer().getToken() + "\"}", TokenIntrospectResponse.class).block());
         
@@ -72,9 +66,14 @@ public class DiscordCommandHandler {
                     source = new TwitchSource().connect(twitch, args[2]);
                     break;
                 case "mixer":
-                    source = mixerHelper.get("/chats/" + args[2], ChatResponse.class)
+                    int chan = Integer.parseInt(args[2]);
+                    WebSocketClient<MixerEvent, MixerMethod> ws = new SimpleWebSocketClient<>();
+                    mixer.put(chan, ws);
+                    
+                    MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
+                    source = mrh.get("/chats/" + chan, ChatResponse.class)
                                 .map(MixerSource::new)
-                                .flatMapMany(ms -> ms.connect(mixer, args[2]));
+                                .flatMapMany(ms -> ms.connect(ws, args[2]));
                     break;
                 default:
                     throw new RuntimeException("Invalid service");
