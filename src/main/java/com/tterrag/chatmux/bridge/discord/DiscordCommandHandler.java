@@ -67,8 +67,7 @@ public class DiscordCommandHandler {
                     break;
                 case "mixer":
                     int chan = Integer.parseInt(args[2]);
-                    WebSocketClient<MixerEvent, MixerMethod> ws = new SimpleWebSocketClient<>();
-                    mixer.put(chan, ws);
+                    WebSocketClient<MixerEvent, MixerMethod> ws = mixer.computeIfAbsent(chan, c -> new SimpleWebSocketClient<>());
                     
                     MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
                     source = mrh.get("/chats/" + chan, ChatResponse.class)
