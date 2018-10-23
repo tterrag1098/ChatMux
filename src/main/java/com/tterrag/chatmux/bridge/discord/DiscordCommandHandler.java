@@ -67,12 +67,18 @@ public class DiscordCommandHandler {
                     break;
                 case "mixer":
                     int chan = Integer.parseInt(args[2]);
-                    WebSocketClient<MixerEvent, MixerMethod> ws = mixer.computeIfAbsent(chan, c -> new SimpleWebSocketClient<>());
-                    
-                    MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
-                    source = mrh.get("/chats/" + chan, ChatResponse.class)
+                    WebSocketClient<MixerEvent, MixerMethod> ws = mixer.get(chan);
+                    if (ws == null) {
+                        final WebSocketClient<MixerEvent, MixerMethod> socket = new SimpleWebSocketClient<>();
+                        mixer.put(chan, socket);
+                        MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
+                        source = mrh.get("/chats/" + chan, ChatResponse.class)
+                                .doOnNext(chat -> socket.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper())).subscribe())
                                 .map(MixerSource::new)
-                                .flatMapMany(ms -> ms.connect(ws, args[2]));
+                                .flatMapMany(ms -> ms.connect(socket, args[2]));
+                    } else {
+                        source = new MixerSource(null).connect(ws, args[2]);
+                    }
                     break;
                 default:
                     throw new RuntimeException("Invalid service");

@@ -2,7 +2,8 @@ package com.tterrag.chatmux.links;
 
 import java.util.Locale;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.annotation.Nullable;
+
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
@@ -10,7 +11,6 @@ import com.tterrag.chatmux.bridge.mixer.method.MixerMethod.MethodType;
 import com.tterrag.chatmux.bridge.mixer.response.ChatResponse;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.util.ServiceType;
-import com.tterrag.chatmux.websocket.FrameParser;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import discord4j.gateway.json.GatewayPayload;
@@ -45,7 +45,7 @@ public interface ChatSource<I, O> {
     @RequiredArgsConstructor
     class MixerSource implements ChatSource<MixerEvent, MixerMethod> {
         
-        private final ChatResponse chat;
+        private final @Nullable ChatResponse chat;
 
         @Override
         public ServiceType getType() {
@@ -54,10 +54,11 @@ public interface ChatSource<I, O> {
         
         @Override
         public Flux<Message> connect(WebSocketClient<MixerEvent, MixerMethod> client, String channel) {
-            // Mixer requires a websocket per channel, so this will always be an unconnected websocket
-            client.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper())).subscribe();
-            
-            client.outbound().next(new MixerMethod(MethodType.AUTH, Integer.parseInt(channel), Main.cfg.getMixer().getUserId(), chat.authKey));
+            final ChatResponse chat = this.chat;
+            // If null, this is a reuse of the same websocket/channel
+            if (chat != null) {
+                client.outbound().next(new MixerMethod(MethodType.AUTH, Integer.parseInt(channel), Main.cfg.getMixer().getUserId(), chat.authKey));
+            }
             
             return client.inbound()
                 .ofType(MixerEvent.Message.class)
