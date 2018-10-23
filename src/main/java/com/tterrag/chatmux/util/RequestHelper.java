@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -67,7 +68,7 @@ public abstract class RequestHelper {
         return request(endpoint, HttpMethod.POST)
                 .send(Mono.just(payload)
                         .map(p -> p instanceof String ? ((String) p).replaceAll("\\r?\\n", "\\\\n") : runUnchecked(() -> mapper.writeValueAsString(p)))
-                        .map(json -> Unpooled.wrappedBuffer(json.getBytes())));
+                        .map(json -> Unpooled.wrappedBuffer(json.getBytes(Charsets.UTF_8))));
     }
     
     public <T> Mono<T> post(String endpoint, Object payload, Class<? extends T> type) {
