@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
+import com.tterrag.chatmux.bridge.discord.response.ChannelObject;
+import com.tterrag.chatmux.bridge.discord.response.UserObject;
 import com.tterrag.chatmux.bridge.discord.response.WebhookObject;
 import com.tterrag.chatmux.util.RequestHelper;
 
@@ -16,7 +16,6 @@ import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@ParametersAreNonnullByDefault
 public class DiscordRequestHelper extends RequestHelper {
     
     private final String token;
@@ -63,6 +62,14 @@ public class DiscordRequestHelper extends RequestHelper {
                         throw new RuntimeException(e);
                     }
                 }));
+    }
+    
+    public Mono<ChannelObject> getChannel(long channel) {
+        return get("/channels/" + Long.toUnsignedString(channel), ChannelObject.class);
+    }
+    
+    public Mono<UserObject> getUser(long user) {
+        return get("/users/" + Long.toUnsignedString(user), UserObject.class);
     }
     
     public Disposable executeWebhook(WebhookObject webhook, String payload) {

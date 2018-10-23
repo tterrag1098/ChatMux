@@ -5,6 +5,7 @@ import java.util.Locale;
 import javax.annotation.Nullable;
 
 import com.tterrag.chatmux.Main;
+import com.tterrag.chatmux.bridge.discord.DiscordRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod.MethodType;
@@ -18,6 +19,8 @@ import discord4j.gateway.json.dispatch.Dispatch;
 import discord4j.gateway.json.dispatch.MessageCreate;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple3;
 
 public interface ChatSource<I, O> {
     
@@ -25,7 +28,10 @@ public interface ChatSource<I, O> {
     
     public Flux<Message> connect(WebSocketClient<I, O> client, String channel);
     
-    class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
+    @RequiredArgsConstructor
+    class Discord implements ChatSource<Dispatch, GatewayPayload<?>> {
+        
+        private final DiscordRequestHelper helper;
 
         @Override
         public ServiceType getType() {
@@ -38,12 +44,14 @@ public interface ChatSource<I, O> {
             return client.inbound()
                     .ofType(MessageCreate.class)
                     .filter(e -> e.getMember() != null)
-                    .map(e -> new Message(getType(), "" + e.getChannelId(), e.getMember().getNick(), e.getContent()));
+                    .filter(e -> e.getChannelId() == Long.parseLong(channel))
+                    .flatMap(e -> Mono.zip(Mono.just(e), helper.getChannel(e.getChannelId())))
+                    .map(t -> new Message(getType(), "#" + t.getT2().name, t.getT1().getAuthor().getUsername() + "#" + t.getT1().getAuthor().getDiscriminator(), t.getT1().getContent()));
         }
     }
     
     @RequiredArgsConstructor
-    class MixerSource implements ChatSource<MixerEvent, MixerMethod> {
+    class Mixer implements ChatSource<MixerEvent, MixerMethod> {
         
         private final @Nullable ChatResponse chat;
 
@@ -66,7 +74,7 @@ public interface ChatSource<I, O> {
         }
     }
     
-    class TwitchSource implements ChatSource<IRCEvent, String> {
+    class Twitch implements ChatSource<IRCEvent, String> {
 
         @Override
         public ServiceType getType() {

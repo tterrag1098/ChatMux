@@ -13,8 +13,7 @@ import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.mixer.response.ChatResponse;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
-import com.tterrag.chatmux.links.ChatSource.MixerSource;
-import com.tterrag.chatmux.links.ChatSource.TwitchSource;
+import com.tterrag.chatmux.links.ChatSource;
 import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.websocket.DecoratedGatewayClient;
 import com.tterrag.chatmux.websocket.FrameParser;
@@ -62,8 +61,11 @@ public class DiscordCommandHandler {
             Flux<Message> source;
 
             switch (args[1].toLowerCase(Locale.ROOT)) {
+                case "discord":
+                    source = new ChatSource.Discord(helper).connect(discord, args[2]);
+                    break;
                 case "twitch": 
-                    source = new TwitchSource().connect(twitch, args[2]);
+                    source = new ChatSource.Twitch().connect(twitch, args[2]);
                     break;
                 case "mixer":
                     int chan = Integer.parseInt(args[2]);
@@ -74,10 +76,10 @@ public class DiscordCommandHandler {
                         MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
                         source = mrh.get("/chats/" + chan, ChatResponse.class)
                                 .doOnNext(chat -> socket.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper())).subscribe())
-                                .map(MixerSource::new)
+                                .map(ChatSource.Mixer::new)
                                 .flatMapMany(ms -> ms.connect(socket, args[2]));
                     } else {
-                        source = new MixerSource(null).connect(ws, args[2]);
+                        source = new ChatSource.Mixer(null).connect(ws, args[2]);
                     }
                     break;
                 default:
