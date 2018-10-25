@@ -3,9 +3,11 @@ package com.tterrag.chatmux.bridge.mixer;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tterrag.chatmux.bridge.mixer.method.MixerRole;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
+import reactor.core.Disposable;
 
 @ParametersAreNonnullByDefault
 public class MixerRequestHelper extends RequestHelper {
@@ -13,14 +15,9 @@ public class MixerRequestHelper extends RequestHelper {
     private final String id, token;
 
     public MixerRequestHelper(ObjectMapper mapper, String id, String token) {
-        super(mapper);
+        super(mapper, "https://mixer.com/api/v1");
         this.id = id;
         this.token = token;
-    }
-    
-    @Override
-    protected String getBaseUrl() {
-        return "https://mixer.com/api/v1";
     }
     
     @Override
@@ -29,5 +26,13 @@ public class MixerRequestHelper extends RequestHelper {
         headers.add("Authorization", "Bearer " + token);
         headers.add("Content-Type", "application/json");
         headers.add("User-Agent", "TwitchBot (https://tropicraft.net, 1.0)");
+    }
+    
+    public Disposable addRoles(int channel, int userId, MixerRole[] roles) {
+        return patch("/channels/" + channel + "/users/" + userId, roles);
+    }
+
+    public Disposable ban(int channel, int userId) {
+        return addRoles(channel, userId, new MixerRole[] { MixerRole.BANNED });
     }
 }

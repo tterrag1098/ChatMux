@@ -41,7 +41,7 @@ public class MixerEvent {
         public String username;
 
         @JsonProperty("user_id")
-        public String userId;
+        public int userId;
         
         public com.tterrag.chatmux.bridge.mixer.event.object.Message message;
     }

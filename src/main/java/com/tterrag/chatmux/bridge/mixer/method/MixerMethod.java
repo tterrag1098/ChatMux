@@ -17,7 +17,9 @@ public class MixerMethod {
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public enum MethodType {
         AUTH("auth", 3, 1),
-        MESSAGE("msg", 1, 0)
+        MESSAGE("msg", 1, 0),
+        PURGE("purge", 1, 0),
+        DELETE_MESSAGE("deleteMessage", 1, 0);
         ;
         
         public final String id;

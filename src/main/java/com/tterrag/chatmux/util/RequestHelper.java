@@ -3,16 +3,18 @@ package com.tterrag.chatmux.util;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
+
+import org.reactivestreams.Publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
@@ -22,23 +24,25 @@ import reactor.netty.http.client.HttpClient.RequestSender;
 import reactor.netty.http.client.HttpClient.ResponseReceiver;
 import reactor.netty.http.client.HttpClientResponse;
 
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @ParametersAreNonnullByDefault
 @Slf4j
 public abstract class RequestHelper {
     
-    protected final ObjectMapper mapper;
+    protected final @Nonnull ObjectMapper mapper;
+    
+    protected final @Nonnull HttpClient client;
+    
+    protected RequestHelper(ObjectMapper mapper, String baseUrl) {
+        this.mapper = mapper;
+        this.client = HttpClient.create()
+                                .baseUrl(baseUrl)
+                                .headers(this::addHeaders)
+                                .wiretap();
+    }
     
     protected RequestSender request(String endpoint, HttpMethod method) {
-        return HttpClient.create()
-                .baseUrl(getBaseUrl())
-                .headers(this::addHeaders)
-                .wiretap()
-                .request(method)
-                .uri(endpoint);
+        return client.request(method).uri(endpoint);
     }
-
-    protected abstract String getBaseUrl();
     
     protected abstract void addHeaders(HttpHeaders headers);
     
@@ -64,11 +68,14 @@ public abstract class RequestHelper {
         return request(endpoint, HttpMethod.GET).<T>responseSingle((r, buf) -> handleResponse(r, buf, type)).doOnError(t -> log.error("Error during GET", t));
     }
     
+    private Publisher<? extends ByteBuf> encodePayload(Object payload) {
+        return Mono.just(payload)
+                .map(p -> p instanceof String ? ((String) p).replaceAll("\\r?\\n", "\\\\n") : runUnchecked(() -> mapper.writeValueAsString(p)))
+                .map(json -> Unpooled.wrappedBuffer(json.getBytes(Charsets.UTF_8)));
+    }
+    
     public ResponseReceiver<?> post(String endpoint, Object payload) {
-        return request(endpoint, HttpMethod.POST)
-                .send(Mono.just(payload)
-                        .map(p -> p instanceof String ? ((String) p).replaceAll("\\r?\\n", "\\\\n") : runUnchecked(() -> mapper.writeValueAsString(p)))
-                        .map(json -> Unpooled.wrappedBuffer(json.getBytes(Charsets.UTF_8))));
+        return request(endpoint, HttpMethod.POST).send(encodePayload(payload));
     }
     
     public <T> Mono<T> post(String endpoint, Object payload, Class<? extends T> type) {
@@ -77,5 +84,20 @@ public abstract class RequestHelper {
 
     protected Disposable postVoid(String endpoint, Object payload) {
         return post(endpoint, payload).response().doOnError(Throwable::printStackTrace).subscribe();
+    }
+    
+    public Disposable delete(String endpoint) {
+        return request(endpoint, HttpMethod.DELETE).response().doOnError(Throwable::printStackTrace).subscribe();
+    }
+    
+    public Disposable put(String endpoint) {
+        return request(endpoint, HttpMethod.PUT).response().doOnNext(System.out::println).doOnError(Throwable::printStackTrace).subscribe();
+    }
+    
+    public Disposable patch(String endpoint, Object payload) {
+        return request(endpoint, HttpMethod.PATCH)
+                .send(encodePayload(payload))
+                .response()
+                .subscribe();
     }
 }

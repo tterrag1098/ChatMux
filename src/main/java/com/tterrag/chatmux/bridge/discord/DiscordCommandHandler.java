@@ -20,11 +20,15 @@ import com.tterrag.chatmux.websocket.FrameParser;
 import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
+import discord4j.gateway.json.dispatch.MessageReactionAdd;
 import reactor.core.publisher.Flux;
+import reactor.util.function.Tuples;
 
 public class DiscordCommandHandler {
     
-    private final DiscordRequestHelper helper;
+    private static final String ADMIN_EMOTE = "\u2757";
+    
+    private final DiscordRequestHelper discordHelper;
     private final MixerRequestHelper mixerHelper = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
 
     
@@ -34,9 +38,15 @@ public class DiscordCommandHandler {
     private final Map<Integer, WebSocketClient<MixerEvent, MixerMethod>> mixer = new HashMap<>();
     private final WebSocketClient<IRCEvent, String> twitch;
 
-    public DiscordCommandHandler(DecoratedGatewayClient client, String token, ObjectMapper mapper) {
+    public DiscordCommandHandler(DecoratedGatewayClient client, String token) {
         this.discord = client;
-        this.helper = new DiscordRequestHelper(mapper, token);
+        
+        discord.inbound().ofType(MessageReactionAdd.class)
+                .filter(p -> p.getUserId() != Main.botUser.getId())
+                .filter(p -> Main.cfg.getAdmins().stream().anyMatch(perm -> perm.getDiscord() != null && perm.getDiscord() == p.getUserId()))
+                .subscribe(p -> System.out.println(p.getEmoji()));
+        
+        this.discordHelper = new DiscordRequestHelper(token);
         
 //        System.out.println(mrh.post("/oauth/token/introspect", "{\"token\":\"" + config.getMixer().getToken() + "\"}", TokenIntrospectResponse.class).block());
         
@@ -46,7 +56,8 @@ public class DiscordCommandHandler {
         
         twitch.outbound()
             .next("PASS oauth:" + Main.cfg.getTwitch().getToken())
-            .next("NICK " + Main.cfg.getTwitch().getNick());
+            .next("NICK " + Main.cfg.getTwitch().getNick())
+            .next("CAP REQ :twitch.tv/tags");
     }
 
     public void handle(long channel, long author, String... args) {
@@ -62,7 +73,7 @@ public class DiscordCommandHandler {
 
             switch (args[1].toLowerCase(Locale.ROOT)) {
                 case "discord":
-                    source = new ChatSource.Discord(helper).connect(discord, args[2]);
+                    source = new ChatSource.Discord(discordHelper).connect(discord, args[2]);
                     break;
                 case "twitch": 
                     source = new ChatSource.Twitch().connect(twitch, args[2]);
@@ -76,17 +87,24 @@ public class DiscordCommandHandler {
                         MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
                         source = mrh.get("/chats/" + chan, ChatResponse.class)
                                 .doOnNext(chat -> socket.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper())).subscribe())
-                                .map(ChatSource.Mixer::new)
+                                .map(chat -> new ChatSource.Mixer(mixerHelper, chat))
                                 .flatMapMany(ms -> ms.connect(socket, args[2]));
                     } else {
-                        source = new ChatSource.Mixer(null).connect(ws, args[2]);
+                        source = new ChatSource.Mixer(mixerHelper, null).connect(ws, args[2]);
                     }
                     break;
                 default:
                     throw new RuntimeException("Invalid service");
             }
             
-            source.subscribe(m -> helper.getWebhook(channel, "ChatMux", in).subscribe(wh -> helper.executeWebhook(wh, "{\"content\":\"" + m + "\"}")));
+            source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, "{\"content\":\"" + m + "\"}")).map(r -> Tuples.of(m, r)))
+                  .doOnNext(t -> discordHelper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE))
+                  .subscribe(t -> discord.inbound().ofType(MessageReactionAdd.class)
+                          .filter(mra -> mra.getUserId() != Main.botUser.getId())
+                          .filter(mra -> mra.getMessageId() == t.getT2().getId())
+                          .filter(mra -> mra.getEmoji().getName().equals(ADMIN_EMOTE))
+                          .doOnNext(mra -> discordHelper.deleteMessage(mra.getChannelId(), mra.getMessageId()))
+                          .subscribe(mra -> t.getT1().delete()));
         }
     }
 }

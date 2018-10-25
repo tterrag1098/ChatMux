@@ -5,11 +5,15 @@ import java.util.Locale;
 import javax.annotation.Nullable;
 
 import com.tterrag.chatmux.Main;
+import com.tterrag.chatmux.bridge.discord.DiscordMessage;
 import com.tterrag.chatmux.bridge.discord.DiscordRequestHelper;
+import com.tterrag.chatmux.bridge.mixer.MixerMessage;
+import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod.MethodType;
 import com.tterrag.chatmux.bridge.mixer.response.ChatResponse;
+import com.tterrag.chatmux.bridge.twitch.TwitchMessage;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.util.ServiceType;
 import com.tterrag.chatmux.websocket.WebSocketClient;
@@ -21,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple3;
+import reactor.util.function.Tuples;
 
 public interface ChatSource<I, O> {
     
@@ -45,14 +50,15 @@ public interface ChatSource<I, O> {
                     .ofType(MessageCreate.class)
                     .filter(e -> e.getMember() != null)
                     .filter(e -> e.getChannelId() == Long.parseLong(channel))
-                    .flatMap(e -> Mono.zip(Mono.just(e), helper.getChannel(e.getChannelId())))
-                    .map(t -> new Message(getType(), "#" + t.getT2().name, t.getT1().getAuthor().getUsername() + "#" + t.getT1().getAuthor().getDiscriminator(), t.getT1().getContent()));
+                    .flatMap(e -> helper.getChannel(e.getChannelId()).map(c -> Tuples.of(e, c)))
+                    .map(t -> new DiscordMessage(helper, t.getT2().getName(), t.getT1()));
         }
     }
     
     @RequiredArgsConstructor
     class Mixer implements ChatSource<MixerEvent, MixerMethod> {
         
+        private final MixerRequestHelper helper;
         private final @Nullable ChatResponse chat;
 
         @Override
@@ -70,7 +76,7 @@ public interface ChatSource<I, O> {
             
             return client.inbound()
                 .ofType(MixerEvent.Message.class)
-                .map(e -> new Message(getType(), "" + e.channel, e.username, e.message.rawText()));
+                .map(e -> new MixerMessage(helper, client, e));
         }
     }
     
@@ -89,7 +95,7 @@ public interface ChatSource<I, O> {
             return client.inbound()
                 .ofType(IRCEvent.Message.class)
                 .filter(e -> e.getChannel().equals(lcChan))
-                .map(e -> new Message(getType(), e.getChannel(), e.getUser(), e.getContent()));
+                .map(e -> new TwitchMessage(client, e));
         }
     }
 }

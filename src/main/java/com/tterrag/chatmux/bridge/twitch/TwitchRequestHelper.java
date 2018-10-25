@@ -20,16 +20,11 @@ public class TwitchRequestHelper extends RequestHelper {
     private long expiry;
     
     public TwitchRequestHelper(ObjectMapper mapper, String id, String secret) {
-        super(mapper);
+        super(mapper, "https://id.twitch.tv/");
         this.id = id;
         this.secret = secret;
     }
-    
-    @Override
-    protected String getBaseUrl() {
-        return "https://id.twitch.tv/";
-    }
-    
+
     @Override
     protected void addHeaders(HttpHeaders headers) {
         TokenResponse token = getToken();

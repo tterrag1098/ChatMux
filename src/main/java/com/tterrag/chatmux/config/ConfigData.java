@@ -1,5 +1,7 @@
 package com.tterrag.chatmux.config;
 
+import java.util.List;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -9,7 +11,7 @@ import lombok.ToString;
 @Getter
 public class ConfigData {
     
-    private AdminData admin;
+//    private AdminData admin;
     
     private ServiceData.Discord discord;
     
@@ -17,6 +19,8 @@ public class ConfigData {
     
     private ServiceData.Mixer mixer;
     
-    private PermissionData permissions;
+    private List<PermissionEntry> admins;
+    
+    private List<PermissionEntry> moderators;
 
 }

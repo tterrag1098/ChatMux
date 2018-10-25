@@ -6,7 +6,9 @@ import com.tterrag.chatmux.config.ConfigData;
 import com.tterrag.chatmux.config.ConfigReader;
 import com.tterrag.chatmux.websocket.DecoratedGatewayClient;
 
+import discord4j.common.json.UserResponse;
 import discord4j.gateway.json.dispatch.MessageCreate;
+import discord4j.gateway.json.dispatch.Ready;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Hooks;
 
@@ -14,6 +16,8 @@ import reactor.core.publisher.Hooks;
 public class Main {
     
     public static ConfigData cfg = new ConfigData();
+    
+    public static UserResponse botUser = new UserResponse();
 
     public static void main(String[] args) throws InterruptedException {
         ConfigReader cfgReader = new ConfigReader();
@@ -25,7 +29,9 @@ public class Main {
         DecoratedGatewayClient discord = new DecoratedGatewayClient();
         discord.connect().subscribe();
         
-        final DiscordCommandHandler commands = new DiscordCommandHandler(discord, cfg.getDiscord().getToken(), new ObjectMapper());
+        final DiscordCommandHandler commands = new DiscordCommandHandler(discord, cfg.getDiscord().getToken());
+        
+        botUser = discord.inbound().ofType(Ready.class).map(e -> e.getUser()).blockFirst(); // TODO can this be better?
 
         discord.inbound().ofType(MessageCreate.class)
             .doOnError(e -> e.printStackTrace())

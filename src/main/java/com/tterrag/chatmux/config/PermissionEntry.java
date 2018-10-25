@@ -7,7 +7,7 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 @Getter
-public class PermissionData {
+public class PermissionEntry {
 
     private Long discord;
     

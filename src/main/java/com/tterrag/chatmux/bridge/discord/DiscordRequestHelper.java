@@ -4,37 +4,59 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
-import com.tterrag.chatmux.bridge.discord.response.ChannelObject;
-import com.tterrag.chatmux.bridge.discord.response.UserObject;
-import com.tterrag.chatmux.bridge.discord.response.WebhookObject;
 import com.tterrag.chatmux.util.RequestHelper;
 
+import discord4j.common.jackson.PossibleModule;
+import discord4j.common.json.MessageResponse;
+import discord4j.common.json.UserResponse;
+import discord4j.rest.RestClient;
+import discord4j.rest.http.ExchangeStrategies;
+import discord4j.rest.http.client.DiscordWebClient;
+import discord4j.rest.json.request.WebhookCreateRequest;
+import discord4j.rest.json.response.ChannelResponse;
+import discord4j.rest.json.response.WebhookResponse;
+import discord4j.rest.request.Router;
+import discord4j.rest.route.Routes;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class DiscordRequestHelper extends RequestHelper {
     
     private final String token;
+    private final RestClient client;
     
-    public DiscordRequestHelper(ObjectMapper mapper, String token) {
-        super(mapper);
+    public DiscordRequestHelper(String token) {
+        super(new ObjectMapper()
+                .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+                .registerModules(new PossibleModule(), new Jdk8Module()),
+                Routes.BASE_URL);
+        
         this.token = token;
-    }
-    
-    @Override
-    protected String getBaseUrl() {
-        return "https://discordapp.com/api";
+
+        HttpHeaders defaultHeaders = new DefaultHttpHeaders();
+        addHeaders(defaultHeaders);
+                
+        final DiscordWebClient httpClient = new DiscordWebClient(super.client, defaultHeaders, ExchangeStrategies.withJacksonDefaults(mapper));
+        this.client = new RestClient(new Router(httpClient, Schedulers.elastic()));
     }
     
     @Override
     protected void addHeaders(HttpHeaders headers) {
-        headers.add("Authorization", "Bot " + token);
-        headers.add("Content-Type", "application/json");
-        headers.add("User-Agent", "DiscordBot (https://tropicraft.net, 1.0)");
+        headers.add(HttpHeaderNames.CONTENT_TYPE, "application/json");
+        headers.add(HttpHeaderNames.AUTHORIZATION, "Bot " + token);
+        headers.add(HttpHeaderNames.USER_AGENT, "DiscordBot(https://tterrag.com 1.0)");
     }
 
     /**
@@ -48,35 +70,50 @@ public class DiscordRequestHelper extends RequestHelper {
      *            An {@link InputStream} pointing to a .png resource
      * @return A {@link WebhookObject} representing the created/found webhook.
      */
-    public Mono<WebhookObject> getWebhook(long channel, String name, InputStream avatar) {
-        return get("/channels/" + channel + "/webhooks", WebhookObject[].class)
-                .flatMapMany(Flux::fromArray)
-                .filter(existing -> existing.name.equals(name))
+    public Mono<WebhookResponse> getWebhook(long channel, String name, InputStream avatar) {
+        return client.getWebhookService().getChannelWebhooks(channel)
+                .filter(existing -> existing.getName().equals(name))
                 .singleOrEmpty() // If there's more than one webhook with the same name, we have big problems...
                 .switchIfEmpty(Mono.defer(() -> {
                     try (InputStream in = avatar) {
                         byte[] image = ByteStreams.toByteArray(in);
                         String template = "{\"name\":\"%s\", \"avatar\":\"data:image/png;base64,%s\"}";
-                        return post("/channels/" + channel + "/webhooks", String.format(template, name, new String(Base64.getEncoder().encodeToString(image))), WebhookObject.class);
+                        return client.getWebhookService().createWebhook(channel, new WebhookCreateRequest(name, new String(Base64.getEncoder().encodeToString(image))));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }));
     }
     
-    public Mono<ChannelObject> getChannel(long channel) {
-        return get("/channels/" + Long.toUnsignedString(channel), ChannelObject.class);
+    public Mono<ChannelResponse> getChannel(long channel) {
+        return client.getChannelService().getChannel(channel);
     }
     
-    public Mono<UserObject> getUser(long user) {
-        return get("/users/" + Long.toUnsignedString(user), UserObject.class);
+    public Mono<UserResponse> getUser(long user) {
+        return client.getUserService().getUser(user);
+    }
+
+    public Disposable deleteMessage(long channelId, long id) {
+        return client.getChannelService().deleteMessage(channelId, id).subscribe();
+    }
+
+    public Disposable kick(long guildId, long id) {
+        return client.getGuildService().removeGuildMember(guildId, id).subscribe();
     }
     
-    public Disposable executeWebhook(WebhookObject webhook, String payload) {
-        return executeWebhook(webhook.id, webhook.token, payload);
+    public Disposable ban(long guildId, long id, int daysToDelete, String reason) {
+        return client.getGuildService().createGuildBan(guildId, id, ImmutableMap.of("delete-message-days", daysToDelete, "reason", reason)).subscribe();
     }
     
-    public Disposable executeWebhook(long id, String token, String payload) {
-        return postVoid("/webhooks/" + id + "/" + token, payload);
+    public Disposable addReaction(long channelId, long messageId, String id, String name) {
+        return client.getChannelService().createReaction(channelId, messageId, (id == null ? name : id + ":" + name)).subscribe();
+    }
+    
+    public Mono<MessageResponse> executeWebhook(WebhookResponse webhook, String payload) {
+        return executeWebhook(webhook.getId(), webhook.getToken(), payload);
+    }
+    
+    public Mono<MessageResponse> executeWebhook(long id, String token, String payload) {
+        return post("/webhooks/" + id + "/" + token + "?wait=true", payload, MessageResponse.class);
     }
 }

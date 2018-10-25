@@ -58,18 +58,19 @@ shadowJar {
 }
 
 repositories {
+	mavenLocal()
     mavenCentral()
     jcenter() 
 	maven { url 'https://jitpack.io' }
 	maven { url 'https://repo.spring.io/milestone' }
-	maven { url 'http://files.minecraftforge.net/maven' } // Using cpw's fork of NightConfig
 }
 
 dependencies {
 	implementation 'com.discord4j.discord4j:discord4j-gateway:v3-SNAPSHOT'
+	implementation 'com.discord4j.discord4j:discord4j-rest:v3-SNAPSHOT'
 	compile 'com.google.guava:guava:17.0'
 	compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile 'ch.qos.logback:logback-classic:1.2.1'
     compile 'org.projectlombok:lombok:1.18.2'
-    compile 'com.electronwill.night-config:toml:3.2.0'
+	compile group: 'com.electronwill.night-config', name: 'toml', version: '3.4.2'
 }
