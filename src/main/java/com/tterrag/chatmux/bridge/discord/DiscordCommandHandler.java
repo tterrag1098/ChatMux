@@ -1,63 +1,69 @@
 package com.tterrag.chatmux.bridge.discord;
 
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.function.Function;
+import java.time.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
-import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
-import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
-import com.tterrag.chatmux.bridge.mixer.response.ChatResponse;
-import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
-import com.tterrag.chatmux.links.ChatSource;
+import com.tterrag.chatmux.links.Channel;
+import com.tterrag.chatmux.links.LinkManager;
 import com.tterrag.chatmux.links.Message;
-import com.tterrag.chatmux.websocket.DecoratedGatewayClient;
-import com.tterrag.chatmux.websocket.FrameParser;
-import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
+import com.tterrag.chatmux.links.WebSocketFactory;
+import com.tterrag.chatmux.util.ServiceType;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
+import discord4j.gateway.json.GatewayPayload;
+import discord4j.gateway.json.dispatch.Dispatch;
 import discord4j.gateway.json.dispatch.MessageReactionAdd;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
 public class DiscordCommandHandler {
     
-    private static final String ADMIN_EMOTE = "\u2757";
+    private static final String ADMIN_EMOTE = "\u274C";
+    
+    private static final Pattern CHANNEL_MENTION = Pattern.compile("<#(\\d+)>");
     
     private final DiscordRequestHelper discordHelper;
+    
     private final MixerRequestHelper mixerHelper = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
 
-    
-    // FIXME TEMP
-    private final DecoratedGatewayClient discord;
-    
-    private final Map<Integer, WebSocketClient<MixerEvent, MixerMethod>> mixer = new HashMap<>();
-    private final WebSocketClient<IRCEvent, String> twitch;
-
-    public DiscordCommandHandler(DecoratedGatewayClient client, String token) {
-        this.discord = client;
-        
-        discord.inbound().ofType(MessageReactionAdd.class)
-                .filter(p -> p.getUserId() != Main.botUser.getId())
-                .filter(p -> Main.cfg.getAdmins().stream().anyMatch(perm -> perm.getDiscord() != null && perm.getDiscord() == p.getUserId()))
-                .subscribe(p -> System.out.println(p.getEmoji()));
-        
+    public DiscordCommandHandler(String token) {
         this.discordHelper = new DiscordRequestHelper(token);
-        
-//        System.out.println(mrh.post("/oauth/token/introspect", "{\"token\":\"" + config.getMixer().getToken() + "\"}", TokenIntrospectResponse.class).block());
-        
-        twitch = new SimpleWebSocketClient<>();
-        twitch.connect("wss://irc-ws.chat.twitch.tv:443", new FrameParser<>(IRCEvent::parse, Function.identity()))
-            .subscribe();
-        
-        twitch.outbound()
-            .next("PASS oauth:" + Main.cfg.getTwitch().getToken())
-            .next("NICK " + Main.cfg.getTwitch().getNick())
-            .next("CAP REQ :twitch.tv/tags");
+    }
+    
+    private Mono<String> getChannelName(long channel, String input, ServiceType<?, ?> type) {
+        Mono<String> ret = Mono.just(input);
+        if (type == ServiceType.DISCORD) {
+            ret = ret.map(name -> {
+                try {
+                    Long.parseLong(name);
+                    return name;
+                } catch (NumberFormatException e) {
+                    Matcher m = CHANNEL_MENTION.matcher(name);
+                    if (m.matches()) {
+                        return m.group(1);
+                    } else {
+                        return "";
+                    }
+                }
+            }).filter(s -> !s.isEmpty());
+        } else if (type == ServiceType.MIXER) {
+            ret = ret.flatMap(name -> {
+                try {
+                    Integer.parseInt(name);
+                    return Mono.just(name);
+                } catch (NumberFormatException e) {
+                    return mixerHelper.getChannel(name).map(c -> c.id).map(c -> Integer.toString(c));
+                }
+            });
+        }
+        return ret;
     }
 
     public void handle(long channel, long author, String... args) {
@@ -69,42 +75,45 @@ public class DiscordCommandHandler {
                 throw new RuntimeException("Resource not found: logo.png");
             }
             
-            Flux<Message> source;
-
-            switch (args[1].toLowerCase(Locale.ROOT)) {
-                case "discord":
-                    source = new ChatSource.Discord(discordHelper).connect(discord, args[2]);
-                    break;
-                case "twitch": 
-                    source = new ChatSource.Twitch().connect(twitch, args[2]);
-                    break;
-                case "mixer":
-                    int chan = Integer.parseInt(args[2]);
-                    WebSocketClient<MixerEvent, MixerMethod> ws = mixer.get(chan);
-                    if (ws == null) {
-                        final WebSocketClient<MixerEvent, MixerMethod> socket = new SimpleWebSocketClient<>();
-                        mixer.put(chan, socket);
-                        MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
-                        source = mrh.get("/chats/" + chan, ChatResponse.class)
-                                .doOnNext(chat -> socket.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper())).subscribe())
-                                .map(chat -> new ChatSource.Mixer(mixerHelper, chat))
-                                .flatMapMany(ms -> ms.connect(socket, args[2]));
-                    } else {
-                        source = new ChatSource.Mixer(mixerHelper, null).connect(ws, args[2]);
-                    }
-                    break;
-                default:
-                    throw new RuntimeException("Invalid service");
-            }
+            ServiceType<?, ?> type = ServiceType.byName(args[1]);
+ 
+            Mono<String> channelName = getChannelName(channel, args[2], type);
+            Mono<Channel<?, ?>> from = channelName.map(name -> new Channel<>(name, type));
+            Channel<?, ?> to = new Channel<>(Long.toString(channel), ServiceType.DISCORD);
             
-            source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, "{\"content\":\"" + m + "\"}")).map(r -> Tuples.of(m, r)))
-                  .doOnNext(t -> discordHelper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE))
-                  .subscribe(t -> discord.inbound().ofType(MessageReactionAdd.class)
+            Flux<Message> source = from.flatMapMany(LinkManager.INSTANCE::connect);
+            WebSocketClient<Dispatch, GatewayPayload<?>> discord = WebSocketFactory.get(ServiceType.DISCORD).getSocket(Long.toString(channel));
+            
+            Disposable sub = 
+              source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, "{\"content\":\"" + m + "\"}")).map(r -> Tuples.of(m, r)))
+                      .doOnNext(t -> discordHelper.getChannel(channel).subscribe(c -> LinkManager.INSTANCE.linkMessage(t.getT1(), new DiscordMessage(discordHelper, Long.toString(channel), t.getT2(), c.getGuildId()))))
+                      .doOnNext(t -> discordHelper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE))
+                      .map(t -> Tuples.of(t.getT2(), discord.inbound().ofType(MessageReactionAdd.class)
                           .filter(mra -> mra.getUserId() != Main.botUser.getId())
                           .filter(mra -> mra.getMessageId() == t.getT2().getId())
                           .filter(mra -> mra.getEmoji().getName().equals(ADMIN_EMOTE))
                           .doOnNext(mra -> discordHelper.deleteMessage(mra.getChannelId(), mra.getMessageId()))
-                          .subscribe(mra -> t.getT1().delete()));
+                          .subscribe(mra -> t.getT1().delete())))
+                      .subscribe(tuple -> Mono.just(tuple).delayElement(Duration.ofMinutes(1)).subscribe(t -> {
+                          discordHelper.getOurUser().subscribe(u -> discordHelper.removeReaction(t.getT1().getChannelId(), u.getId(), t.getT1().getId(), null, ADMIN_EMOTE));
+                          t.getT2().dispose();
+                      }));
+            
+            from.subscribe(chan -> {
+                LinkManager.INSTANCE.addLink(chan, to, sub);
+                discordHelper.sendMessage(channel, "Link established! " + chan + " -> " + to);
+            });
+            from.switchIfEmpty(Mono.just(to).doOnNext(chan -> discordHelper.sendMessage(channel, "Channel must be a mention or ID"))).subscribe();
+        } else if (args.length == 3 && args[0].equals("unlink")) {
+            ServiceType<?, ?> type = ServiceType.byName(args[1]);
+            Mono<Channel<?, ?>> from = getChannelName(channel, args[2], type).map(chan -> new Channel<>(chan, type));
+            Channel<?, ?> to = new Channel<>(Long.toString(channel), ServiceType.DISCORD);
+            
+            from.subscribe(chan -> {
+                LinkManager.INSTANCE.removeLink(chan, to);
+                discordHelper.sendMessage(channel, "Link broken! " + chan + " -/> " + to);
+            });
+            from.switchIfEmpty(Mono.just(to).doOnNext(chan -> discordHelper.sendMessage(channel, "Channel must be a mention or ID"))).subscribe();
         }
     }
 }

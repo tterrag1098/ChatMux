@@ -75,6 +75,7 @@ public class DecoratedGatewayClient implements WebSocketClient<Dispatch, Gateway
     }
     
     @Override
+    @Deprecated
     public Mono<Void> connect(String string, FrameParser<Dispatch, GatewayPayload<?>> frameParser) {
         return connect();
     }

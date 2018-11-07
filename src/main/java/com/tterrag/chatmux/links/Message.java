@@ -2,18 +2,25 @@ package com.tterrag.chatmux.links;
 
 import com.tterrag.chatmux.util.ServiceType;
 
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
 @Value
 @NonFinal
+@RequiredArgsConstructor
 public abstract class Message {
     
-    ServiceType source;
+    ServiceType<?, ?> source;
     String channel;
+    String channelId;
 
     String user;
     String content;
+    
+    protected Message(ServiceType<?, ?> type, String channel, String user, String content) {
+        this(type, channel, channel, user, content);
+    }
     
     /**
      * Deletes the current message, exact behavior is up to the specific service.

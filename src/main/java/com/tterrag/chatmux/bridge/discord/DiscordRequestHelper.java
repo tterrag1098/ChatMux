@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
+import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import discord4j.common.jackson.PossibleModule;
@@ -19,15 +20,18 @@ import discord4j.common.json.UserResponse;
 import discord4j.rest.RestClient;
 import discord4j.rest.http.ExchangeStrategies;
 import discord4j.rest.http.client.DiscordWebClient;
+import discord4j.rest.json.request.MessageCreateRequest;
 import discord4j.rest.json.request.WebhookCreateRequest;
 import discord4j.rest.json.response.ChannelResponse;
 import discord4j.rest.json.response.WebhookResponse;
 import discord4j.rest.request.Router;
 import discord4j.rest.route.Routes;
+import discord4j.rest.util.MultipartRequest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -39,7 +43,7 @@ public class DiscordRequestHelper extends RequestHelper {
     public DiscordRequestHelper(String token) {
         super(new ObjectMapper()
                 .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .registerModules(new PossibleModule(), new Jdk8Module()),
                 Routes.BASE_URL);
         
@@ -108,6 +112,10 @@ public class DiscordRequestHelper extends RequestHelper {
     public Disposable addReaction(long channelId, long messageId, String id, String name) {
         return client.getChannelService().createReaction(channelId, messageId, (id == null ? name : id + ":" + name)).subscribe();
     }
+
+    public Disposable removeReaction(long channelId, long userId, long messageId, String id, String name) {
+        return client.getChannelService().deleteReaction(channelId, messageId, (id == null ? name : id + ":" + name), userId).subscribe();
+    }
     
     public Mono<MessageResponse> executeWebhook(WebhookResponse webhook, String payload) {
         return executeWebhook(webhook.getId(), webhook.getToken(), payload);
@@ -115,5 +123,13 @@ public class DiscordRequestHelper extends RequestHelper {
     
     public Mono<MessageResponse> executeWebhook(long id, String token, String payload) {
         return post("/webhooks/" + id + "/" + token + "?wait=true", payload, MessageResponse.class);
+    }
+
+    public Mono<UserResponse> getOurUser() {
+        return client.getUserService().getCurrentUser();
+    }
+
+    public Disposable sendMessage(long channel, String string) {
+        return client.getChannelService().createMessage(channel, new MultipartRequest(new MessageCreateRequest(string, null, false, null))).subscribe();
     }
 }

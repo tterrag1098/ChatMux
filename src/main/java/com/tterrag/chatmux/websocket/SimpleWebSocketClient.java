@@ -2,6 +2,8 @@ package com.tterrag.chatmux.websocket;
 
 import javax.annotation.Nonnull;
 
+import discord4j.gateway.json.GatewayPayload;
+import discord4j.gateway.json.Opcode;
 import discord4j.gateway.json.dispatch.Dispatch;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

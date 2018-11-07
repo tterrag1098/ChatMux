@@ -2,17 +2,12 @@ package com.tterrag.chatmux.links;
 
 import java.util.Locale;
 
-import javax.annotation.Nullable;
-
-import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.discord.DiscordMessage;
 import com.tterrag.chatmux.bridge.discord.DiscordRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.MixerMessage;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
-import com.tterrag.chatmux.bridge.mixer.method.MixerMethod.MethodType;
-import com.tterrag.chatmux.bridge.mixer.response.ChatResponse;
 import com.tterrag.chatmux.bridge.twitch.TwitchMessage;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.util.ServiceType;
@@ -23,13 +18,11 @@ import discord4j.gateway.json.dispatch.Dispatch;
 import discord4j.gateway.json.dispatch.MessageCreate;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
 public interface ChatSource<I, O> {
     
-    public ServiceType getType();
+    public ServiceType<I, O> getType();
     
     public Flux<Message> connect(WebSocketClient<I, O> client, String channel);
     
@@ -39,7 +32,7 @@ public interface ChatSource<I, O> {
         private final DiscordRequestHelper helper;
 
         @Override
-        public ServiceType getType() {
+        public ServiceType<Dispatch, GatewayPayload<?>> getType() {
             return ServiceType.DISCORD;
         }
 
@@ -59,21 +52,14 @@ public interface ChatSource<I, O> {
     class Mixer implements ChatSource<MixerEvent, MixerMethod> {
         
         private final MixerRequestHelper helper;
-        private final @Nullable ChatResponse chat;
 
         @Override
-        public ServiceType getType() {
+        public ServiceType<MixerEvent, MixerMethod> getType() {
             return ServiceType.MIXER;
         }
         
         @Override
         public Flux<Message> connect(WebSocketClient<MixerEvent, MixerMethod> client, String channel) {
-            final ChatResponse chat = this.chat;
-            // If null, this is a reuse of the same websocket/channel
-            if (chat != null) {
-                client.outbound().next(new MixerMethod(MethodType.AUTH, Integer.parseInt(channel), Main.cfg.getMixer().getUserId(), chat.authKey));
-            }
-            
             return client.inbound()
                 .ofType(MixerEvent.Message.class)
                 .map(e -> new MixerMessage(helper, client, e));
@@ -83,7 +69,7 @@ public interface ChatSource<I, O> {
     class Twitch implements ChatSource<IRCEvent, String> {
 
         @Override
-        public ServiceType getType() {
+        public ServiceType<IRCEvent, String> getType() {
             return ServiceType.TWITCH;
         }
         

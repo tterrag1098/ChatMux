@@ -4,10 +4,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.bridge.mixer.method.MixerRole;
+import com.tterrag.chatmux.bridge.mixer.response.ChannelResponse;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.Disposable;
+import reactor.core.publisher.Mono;
 
 @ParametersAreNonnullByDefault
 public class MixerRequestHelper extends RequestHelper {
@@ -34,5 +36,13 @@ public class MixerRequestHelper extends RequestHelper {
 
     public Disposable ban(int channel, int userId) {
         return addRoles(channel, userId, new MixerRole[] { MixerRole.BANNED });
+    }
+    
+    public Mono<ChannelResponse> getChannel(int id) {
+        return getChannel(Integer.toString(id));
+    }
+    
+    public Mono<ChannelResponse> getChannel(String tokenOrID) {
+        return get("/channels/" + tokenOrID, ChannelResponse.class);
     }
 }

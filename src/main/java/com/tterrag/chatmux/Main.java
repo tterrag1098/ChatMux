@@ -1,6 +1,5 @@
 package com.tterrag.chatmux;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.bridge.discord.DiscordCommandHandler;
 import com.tterrag.chatmux.config.ConfigData;
 import com.tterrag.chatmux.config.ConfigReader;
@@ -29,7 +28,7 @@ public class Main {
         DecoratedGatewayClient discord = new DecoratedGatewayClient();
         discord.connect().subscribe();
         
-        final DiscordCommandHandler commands = new DiscordCommandHandler(discord, cfg.getDiscord().getToken());
+        final DiscordCommandHandler commands = new DiscordCommandHandler(cfg.getDiscord().getToken());
         
         botUser = discord.inbound().ofType(Ready.class).map(e -> e.getUser()).blockFirst(); // TODO can this be better?
 
