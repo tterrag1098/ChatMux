@@ -46,16 +46,10 @@ public abstract class WebSocketFactory<I, O> {
     
     private static class Discord extends WebSocketFactory<Dispatch, GatewayPayload<?>> {
         
-        private boolean connected;
-        
         private final DecoratedGatewayClient discord = new DecoratedGatewayClient();
 
         @Override
         public WebSocketClient<Dispatch, GatewayPayload<?>> getSocket(String channel) {
-            if (!connected) {
-                discord.connect().subscribe();
-                connected = true;
-            }
             return discord;
         }
 
