@@ -4,6 +4,7 @@
 /build/
 /logs/
 chatmux.toml
+links.json
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
