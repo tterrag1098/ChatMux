@@ -5,10 +5,13 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.bridge.mixer.method.MixerRole;
 import com.tterrag.chatmux.bridge.mixer.response.ChannelResponse;
+import com.tterrag.chatmux.bridge.mixer.response.UserResponse;
+import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @ParametersAreNonnullByDefault
@@ -44,5 +47,9 @@ public class MixerRequestHelper extends RequestHelper {
     
     public Mono<ChannelResponse> getChannel(String tokenOrID) {
         return get("/channels/" + tokenOrID, ChannelResponse.class);
+    }
+
+    public Mono<UserResponse> getUser(int id) {
+        return get("/users/" + id, UserResponse.class);
     }
 }

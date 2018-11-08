@@ -81,8 +81,8 @@ public class DiscordRequestHelper extends RequestHelper {
                 .switchIfEmpty(Mono.defer(() -> {
                     try (InputStream in = avatar) {
                         byte[] image = ByteStreams.toByteArray(in);
-                        String template = "{\"name\":\"%s\", \"avatar\":\"data:image/png;base64,%s\"}";
-                        return client.getWebhookService().createWebhook(channel, new WebhookCreateRequest(name, new String(Base64.getEncoder().encodeToString(image))));
+                        String encoded = Base64.getEncoder().encodeToString(image);
+                        return client.getWebhookService().createWebhook(channel, new WebhookCreateRequest(name, "data:image/png;base64," + encoded));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

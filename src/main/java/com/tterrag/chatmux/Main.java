@@ -33,8 +33,6 @@ public class Main {
         cfgReader.load();
         cfg = cfgReader.getData();
         
-        new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken()).getUsers("tterrag1098").subscribe(users -> System.out.println(Arrays.toString(users)));
-        
         Hooks.onOperatorDebug();
         
         DecoratedGatewayClient discord = (DecoratedGatewayClient) WebSocketFactory.get(ServiceType.DISCORD).getSocket(null);

@@ -23,7 +23,7 @@ public class TwitchRequestHelper extends RequestHelper {
     private final String token;
     
     public TwitchRequestHelper(ObjectMapper mapper, String token) {
-        super(mapper, "https://api.twitch.tv/");
+        super(mapper, "https://api.twitch.tv/helix");
         this.token = token;
     }
 
@@ -49,7 +49,7 @@ public class TwitchRequestHelper extends RequestHelper {
                         Arrays.stream(logins).map(s -> "login=" + s))
                   .collect(Collectors.joining("&"));
         
-        return get("/helix/users" + args, JsonNode.class)
+        return get("/users" + args, JsonNode.class)
                 .map(node -> node.get("data"))
                 .map(node -> {
                     try {

@@ -10,8 +10,8 @@ public class TwitchMessage extends Message {
     private final WebSocketClient<?, String> client;
     private final IRCEvent.Message message;
 
-    public TwitchMessage(WebSocketClient<?, String> client, IRCEvent.Message message) {
-        super(ServiceType.TWITCH, message.getChannel(), message.getUser(), message.getContent(), null);
+    public TwitchMessage(WebSocketClient<?, String> client, IRCEvent.Message message, String displayname, String avatar) {
+        super(ServiceType.TWITCH, message.getChannel(), displayname, message.getContent(), avatar);
         this.client = client;
         this.message = message;
     }

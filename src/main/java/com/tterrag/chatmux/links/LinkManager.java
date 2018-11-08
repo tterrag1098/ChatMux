@@ -34,6 +34,7 @@ import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.discord.DiscordCommandHandler;
 import com.tterrag.chatmux.bridge.discord.DiscordRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
+import com.tterrag.chatmux.bridge.twitch.TwitchRequestHelper;
 import com.tterrag.chatmux.util.ServiceType;
 
 import lombok.RequiredArgsConstructor;
@@ -73,7 +74,7 @@ public enum LinkManager {
 
         @Override
         public Link convert(Link value) {
-            Disposable sub = DiscordCommandHandler.connect(INSTANCE.discordHelper, INSTANCE.mixerHelper, value.getFrom(), value.getTo(), value.isRaw());
+            Disposable sub = DiscordCommandHandler.connect(INSTANCE.discordHelper, INSTANCE.mixerHelper, INSTANCE.twitchHelper, value.getFrom(), value.getTo(), value.isRaw());
             return new Link(value.getFrom(), value.getTo(), value.isRaw(), sub);
         }
 
@@ -107,13 +108,14 @@ public enum LinkManager {
     
     private final DiscordRequestHelper discordHelper = new DiscordRequestHelper(Main.cfg.getDiscord().getToken());
     private final MixerRequestHelper mixerHelper = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
+    private final TwitchRequestHelper twitchHelper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
     
     public <I, O> Flux<Message> connect(Channel<I, O> channel) {
         ServiceType<I, O> type = channel.getType();
         if (type == ServiceType.DISCORD) {
             return new ChatSource.Discord(discordHelper).connect(WebSocketFactory.get(ServiceType.DISCORD).getSocket(channel.getName()), channel.getName());
         } else if (type == ServiceType.TWITCH) {
-            return new ChatSource.Twitch().connect(WebSocketFactory.get(ServiceType.TWITCH).getSocket(channel.getName()), channel.getName());
+            return new ChatSource.Twitch(twitchHelper).connect(WebSocketFactory.get(ServiceType.TWITCH).getSocket(channel.getName()), channel.getName());
         } else if (type == ServiceType.MIXER) {
             return new ChatSource.Mixer(mixerHelper).connect(WebSocketFactory.get(ServiceType.MIXER).getSocket(channel.getName()), channel.getName());
         }

@@ -9,6 +9,7 @@ import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.twitch.TwitchMessage;
+import com.tterrag.chatmux.bridge.twitch.TwitchRequestHelper;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.util.ServiceType;
 import com.tterrag.chatmux.websocket.WebSocketClient;
@@ -62,11 +63,15 @@ public interface ChatSource<I, O> {
         public Flux<Message> connect(WebSocketClient<MixerEvent, MixerMethod> client, String channel) {
             return client.inbound()
                 .ofType(MixerEvent.Message.class)
-                .map(e -> new MixerMessage(helper, client, e));
+                .flatMap(e -> helper.getUser(e.userId)
+                                    .map(u -> new MixerMessage(helper, client, e, u.avatarUrl)));
         }
     }
     
+    @RequiredArgsConstructor
     class Twitch implements ChatSource<IRCEvent, String> {
+        
+        private final TwitchRequestHelper helper;
 
         @Override
         public ServiceType<IRCEvent, String> getType() {
@@ -81,7 +86,10 @@ public interface ChatSource<I, O> {
             return client.inbound()
                 .ofType(IRCEvent.Message.class)
                 .filter(e -> e.getChannel().equals(lcChan))
-                .map(e -> new TwitchMessage(client, e));
+                .flatMap(e -> helper.getUsers(e.getUser())
+                                    .flatMapMany(Flux::fromArray)
+                                    .next()
+                                    .map(u -> new TwitchMessage(client, e, u.displayName, u.avatarUrl)));
         }
     }
 }

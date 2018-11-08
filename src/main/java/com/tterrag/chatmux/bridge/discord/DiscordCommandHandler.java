@@ -12,6 +12,7 @@ import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod.MethodType;
+import com.tterrag.chatmux.bridge.twitch.TwitchRequestHelper;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.links.Channel;
 import com.tterrag.chatmux.links.ChatSource;
@@ -40,6 +41,7 @@ public class DiscordCommandHandler {
     private final DiscordRequestHelper discordHelper;
     
     private final MixerRequestHelper mixerHelper = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
+    private final TwitchRequestHelper twitchHelper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
 
     public DiscordCommandHandler(String token) {
         this.discordHelper = new DiscordRequestHelper(token);
@@ -92,7 +94,7 @@ public class DiscordCommandHandler {
             
             final boolean raw = args[0].equals("+linkraw");
 
-            sources.zipWhen(t -> Mono.just(connect(discordHelper, mixerHelper, t.getT1(), t.getT2(), raw)), (t, d) -> Tuples.of(t.getT1(), t.getT2(), d))
+            sources.zipWhen(t -> Mono.just(connect(discordHelper, mixerHelper, twitchHelper, t.getT1(), t.getT2(), raw)), (t, d) -> Tuples.of(t.getT1(), t.getT2(), d))
                    .doOnNext(t -> LinkManager.INSTANCE.addLink(t.getT1(), t.getT2(), raw, t.getT3()))
                    .doOnError(IllegalArgumentException.class, e -> discordHelper.sendMessage(channel, e.getMessage()))
                    .doOnError(Throwable::printStackTrace)
@@ -118,7 +120,7 @@ public class DiscordCommandHandler {
         }
     }
     
-    public static Disposable connect(DiscordRequestHelper discordHelper, MixerRequestHelper mixerHelper, Channel<?, ?> from, Channel<?, ?> to, boolean raw) {
+    public static Disposable connect(DiscordRequestHelper discordHelper, MixerRequestHelper mixerHelper, TwitchRequestHelper twitchHelper, Channel<?, ?> from, Channel<?, ?> to, boolean raw) {
 
         InputStream in = Main.class.getResourceAsStream("/logo.png");
         if (in == null) {
@@ -152,7 +154,7 @@ public class DiscordCommandHandler {
             sub = source.subscribe(m -> mixer.outbound().next(new MixerMethod(MethodType.MESSAGE, (raw ? m.getContent() : m.toString()))));
         } else if (to.getType() == ServiceType.TWITCH) {
             WebSocketClient<IRCEvent, String> twitch = WebSocketFactory.get(ServiceType.TWITCH).getSocket(to.getName());
-            new ChatSource.Twitch().connect(twitch, to.getName());
+            new ChatSource.Twitch(twitchHelper).connect(twitch, to.getName());
             sub = source.subscribe(m -> twitch.outbound().next("PRIVMSG #" + to.getName().toLowerCase(Locale.ROOT) + " :" + (raw ? m.getContent() : m)));
         } else {
             throw new IllegalArgumentException("Invalid target service");
