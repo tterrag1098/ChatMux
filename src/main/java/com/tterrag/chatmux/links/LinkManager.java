@@ -52,13 +52,20 @@ public enum LinkManager {
     public static class Link {
         
         Channel<?, ?> from, to;
-        
+
+        boolean raw;
+
         @JsonIgnore
         Disposable subscriber;
-        
+                
         @JsonCreator
-        Link(@JsonProperty("from") Channel<?, ?> from, @JsonProperty("to") Channel<?, ?> to) {
-            this(from, to, null);
+        Link(@JsonProperty("from") Channel<?, ?> from, @JsonProperty("to") Channel<?, ?> to, @JsonProperty("raw") boolean raw) {
+            this(from, to, raw, null);
+        }
+        
+        @Override
+        public String toString() {
+            return from + " -> " + to + (raw ? " (raw)" : "");
         }
     }
     
@@ -66,8 +73,8 @@ public enum LinkManager {
 
         @Override
         public Link convert(Link value) {
-            Disposable sub = DiscordCommandHandler.connect(INSTANCE.discordHelper, value.getFrom(), value.getTo());
-            return new Link(value.getFrom(), value.getTo(), sub);
+            Disposable sub = DiscordCommandHandler.connect(INSTANCE.discordHelper, INSTANCE.mixerHelper, value.getFrom(), value.getTo(), value.isRaw());
+            return new Link(value.getFrom(), value.getTo(), value.isRaw(), sub);
         }
 
         @Override
@@ -114,7 +121,7 @@ public enum LinkManager {
     }
     
     private void saveLinks() {
-        List<Link> allLinks = links.values().stream().flatMap(m -> m.values().stream()).collect(Collectors.toList());
+        List<Link> allLinks = getLinks();
         try {
             new ObjectMapper().writeValue(new File("links.json"), allLinks);
         } catch (IOException e) {
@@ -124,15 +131,18 @@ public enum LinkManager {
 
     public void readLinks() {
         try {
-            List<Link> allLinks = new ObjectMapper().readValue(new File("links.json"), new TypeReference<List<Link>>() {});
-            allLinks.forEach(this::addLink);
+            File file = new File("links.json");
+            if (file.exists()) {
+                List<Link> allLinks = new ObjectMapper().readValue(new File("links.json"), new TypeReference<List<Link>>() {});
+                allLinks.forEach(this::addLink);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
     
-    public void addLink(Channel<?, ?> from, Channel<?, ?> to, Disposable subscriber) {
-        addLink(new Link(from, to, subscriber));
+    public void addLink(Channel<?, ?> from, Channel<?, ?> to, boolean raw, Disposable subscriber) {
+        addLink(new Link(from, to, raw, subscriber));
     }
     
     private void addLink(Link link) {
@@ -150,6 +160,10 @@ public enum LinkManager {
             WebSocketFactory.get(from.getType()).disposeSocket(from.getName());
         }
         saveLinks();
+    }
+    
+    public List<Link> getLinks() {
+        return links.values().stream().flatMap(m -> m.values().stream()).collect(Collectors.toList());
     }
     
     public void linkMessage(Message source, Message linked) {
