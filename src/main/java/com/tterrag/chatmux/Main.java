@@ -1,6 +1,10 @@
 package com.tterrag.chatmux;
 
+import java.util.Arrays;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.bridge.discord.DiscordCommandHandler;
+import com.tterrag.chatmux.bridge.twitch.TwitchRequestHelper;
 import com.tterrag.chatmux.config.ConfigData;
 import com.tterrag.chatmux.config.ConfigReader;
 import com.tterrag.chatmux.links.LinkManager;
@@ -24,10 +28,12 @@ public class Main {
     
     public static UserResponse botUser = new UserResponse();
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException {        
         ConfigReader cfgReader = new ConfigReader();
         cfgReader.load();
         cfg = cfgReader.getData();
+        
+        new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken()).getUsers("tterrag1098").subscribe(users -> System.out.println(Arrays.toString(users)));
         
         Hooks.onOperatorDebug();
         

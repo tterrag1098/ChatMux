@@ -5,7 +5,6 @@ import com.tterrag.chatmux.util.ServiceType;
 
 import discord4j.common.json.MessageResponse;
 import discord4j.gateway.json.dispatch.MessageCreate;
-import discord4j.gateway.json.dispatch.MessageReactionAdd;
 
 public class DiscordMessage extends Message {
     
@@ -17,15 +16,16 @@ public class DiscordMessage extends Message {
     private final long id;
 
     public DiscordMessage(DiscordRequestHelper helper, String channelName, MessageCreate message) {
-        this(helper, channelName, message.getAuthor().getUsername(), message.getContent(), message.getGuildId(), message.getChannelId(), message.getAuthor().getId(), message.getId());
+        this(helper, channelName, message.getAuthor().getUsername(), message.getContent(), message.getGuildId(), message.getChannelId(), message.getAuthor().getId(), message.getId(), message.getAuthor().getAvatar());
     }
     
     public DiscordMessage(DiscordRequestHelper helper, String channelName, MessageResponse message, Long guildId) {
-        this(helper, channelName, message.getAuthor().getUsername(), message.getContent(), guildId, message.getChannelId(), message.getAuthor().getId(), message.getId());
+        this(helper, channelName, message.getAuthor().getUsername(), message.getContent(), guildId, message.getChannelId(), message.getAuthor().getId(), message.getId(), message.getAuthor().getAvatar());
     }
     
-    private DiscordMessage(DiscordRequestHelper helper, String channelName, String authorName, String content, Long guild, long channel, long author, long id) {
-        super(ServiceType.DISCORD, "#" + channelName, Long.toString(channel), authorName, content);
+    private DiscordMessage(DiscordRequestHelper helper, String channelName, String authorName, String content, Long guild, long channel, long author, long id, String avatar) {
+        super(ServiceType.DISCORD, "#" + channelName, Long.toString(channel), authorName, content, "https://cdn.discordapp.com/avatars/" + author + "/" + avatar + ".png");
+        System.out.println(getAvatar());
         this.helper = helper;
         this.guild = guild;
         this.channel = channel;

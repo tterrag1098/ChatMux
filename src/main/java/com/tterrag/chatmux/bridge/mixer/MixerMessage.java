@@ -14,7 +14,7 @@ public class MixerMessage extends Message {
     private final MixerEvent.Message message;
 
     public MixerMessage(MixerRequestHelper helper, WebSocketClient<?, MixerMethod> client, MixerEvent.Message message) {
-        super(ServiceType.MIXER, "" + message.channel, message.username, message.message.rawText());
+        super(ServiceType.MIXER, "" + message.channel, message.username, message.message.rawText(), null);
         this.helper = helper;
         this.client = client;
         this.message = message;

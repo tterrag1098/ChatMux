@@ -1,9 +1,15 @@
 package com.tterrag.chatmux.bridge.twitch;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tterrag.chatmux.bridge.twitch.response.TokenResponse;
+import com.tterrag.chatmux.bridge.twitch.response.UserResponse;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
@@ -14,37 +20,58 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class TwitchRequestHelper extends RequestHelper {
     
-    private final String id, secret;
+    private final String token;
     
-    private TokenResponse token;
-    private long expiry;
-    
-    public TwitchRequestHelper(ObjectMapper mapper, String id, String secret) {
-        super(mapper, "https://id.twitch.tv/");
-        this.id = id;
-        this.secret = secret;
+    public TwitchRequestHelper(ObjectMapper mapper, String token) {
+        super(mapper, "https://api.twitch.tv/");
+        this.token = token;
     }
 
     @Override
     protected void addHeaders(HttpHeaders headers) {
-        TokenResponse token = getToken();
-        headers.add("Authorization", token.type + " " + token);
+        headers.add("Authorization", "Bearer " + token);
         headers.add("Content-Type", "application/json");
         headers.add("User-Agent", "TwitchBot (https://tropicraft.net, 1.0)");
     }
     
-    public TokenResponse getToken() {
-        if (token == null || expiry <= System.currentTimeMillis()) {
-            token = requestToken().block(); // FIXME
-        }
-        return token;
+    public Mono<UserResponse[]> getUsers(int... ids) {
+        return getUsers(ids, new String[0]);
     }
     
-    private Mono<TokenResponse> requestToken() {
-        return get("/oauth2/token" + 
-                   "?client_id=" + id + 
-                   "&client_secret=" + secret + 
-                   "&grant_type=client_credentials",
-                   TokenResponse.class);
+    public Mono<UserResponse[]> getUsers(String... logins) {
+        return getUsers(new int[0], logins);
     }
+    
+    public Mono<UserResponse[]> getUsers(int[] ids, String[] logins) {
+        String args = "?" + 
+            Stream.concat(
+                        Arrays.stream(ids).mapToObj(Integer::toString).map(s -> "id=" + s),
+                        Arrays.stream(logins).map(s -> "login=" + s))
+                  .collect(Collectors.joining("&"));
+        
+        return get("/helix/users" + args, JsonNode.class)
+                .map(node -> node.get("data"))
+                .map(node -> {
+                    try {
+                        return mapper.readValue(node.toString(), UserResponse[].class);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Error reading JSON", e);
+                    }
+                });
+    }
+    
+//    public TokenResponse getToken() {
+//        if (token == null || expiry <= System.currentTimeMillis()) {
+//            token = requestToken().block(); // FIXME
+//        }
+//        return token;
+//    }
+//    
+//    private Mono<TokenResponse> requestToken() {
+//        return get("/oauth2/token" + 
+//                   "?client_id=" + id + 
+//                   "&client_secret=" + secret + 
+//                   "&grant_type=client_credentials",
+//                   TokenResponse.class);
+//    }
 }

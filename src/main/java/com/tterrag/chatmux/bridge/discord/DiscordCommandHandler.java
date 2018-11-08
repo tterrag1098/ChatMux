@@ -132,7 +132,7 @@ public class DiscordCommandHandler {
         if (to.getType() == ServiceType.DISCORD) {        
             WebSocketClient<Dispatch, GatewayPayload<?>> discord = WebSocketFactory.get(ServiceType.DISCORD).getSocket(to.getName());
             long channel = Long.parseLong(to.getName());
-            sub = source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, "{\"content\":\"" + (raw ? m.getContent() : m) + "\"}")).map(r -> Tuples.of(m, r)))
+            sub = source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, new WebhookMessage(m.getContent(), m.getUser() + " (" + m.getSource() + "/" + m.getChannel() + ")", m.getAvatar()).toString())).map(r -> Tuples.of(m, r)))
                         .doOnNext(t -> discordHelper.getChannel(channel).subscribe(c -> LinkManager.INSTANCE.linkMessage(t.getT1(), new DiscordMessage(discordHelper, Long.toString(channel), t.getT2(), c.getGuildId()))))
                         .doOnNext(t -> discordHelper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE))
                         .map(t -> Tuples.of(t.getT2(), discord.inbound().ofType(MessageReactionAdd.class)
