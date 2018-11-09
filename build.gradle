@@ -72,5 +72,5 @@ dependencies {
 	compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile 'ch.qos.logback:logback-classic:1.2.1'
     compile 'org.projectlombok:lombok:1.18.2'
-	compile group: 'com.electronwill.night-config', name: 'toml', version: '3.4.2'
+    implementation 'com.github.TheElectronWill.Night-Config:toml:f6ec74babb'
 }

@@ -17,6 +17,7 @@ import discord4j.common.jackson.PossibleModule;
 import discord4j.common.jackson.UnknownPropertyHandler;
 import discord4j.gateway.GatewayClient;
 import discord4j.gateway.IdentifyOptions;
+import discord4j.gateway.TokenBucket;
 import discord4j.gateway.json.GatewayPayload;
 import discord4j.gateway.json.dispatch.Dispatch;
 import discord4j.gateway.payload.JacksonPayloadReader;
@@ -61,7 +62,7 @@ public class DecoratedGatewayClient implements WebSocketClient<Dispatch, Gateway
                 PayloadWriter writer = new JacksonPayloadWriter(mapper);
                 RetryOptions retryOptions = new RetryOptions(Duration.ofSeconds(5), Duration.ofSeconds(120), Integer.MAX_VALUE);
 
-                wrapped = new GatewayClient(reader, writer, retryOptions, token, new IdentifyOptions(0, 1, null));
+                wrapped = new GatewayClient(reader, writer, retryOptions, token, new IdentifyOptions(0, 1, null), null, new TokenBucket(10, Duration.ofSeconds(5)));
                 endpoint = gateway.get("url").textValue();
                 if (endpoint == null) {
                     throw new IllegalStateException("Invalid endpoint url: " + gateway.get("url"));
