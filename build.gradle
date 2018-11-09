@@ -44,7 +44,7 @@ tasks.withType(JavaCompile) {
 
 jar {
     manifest {
-       attributes 'Main-Class': 'net.tropicraft.bridge.Main',
+       attributes 'Main-Class': 'com.tterrag.chatmux.Main',
                   'Implementation-Version': project.version
     }
 }
