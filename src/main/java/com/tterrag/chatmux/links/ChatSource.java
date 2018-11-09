@@ -1,6 +1,7 @@
 package com.tterrag.chatmux.links;
 
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import com.tterrag.chatmux.bridge.discord.DiscordMessage;
 import com.tterrag.chatmux.bridge.discord.DiscordRequestHelper;
@@ -30,6 +31,8 @@ public interface ChatSource<I, O> {
     @RequiredArgsConstructor
     class Discord implements ChatSource<Dispatch, GatewayPayload<?>> {
         
+        private static final Pattern TEMP_COMMAND_PATTERN = Pattern.compile("^\\s*(\\+link(raw)?|^-link|^~links)");
+        
         private final DiscordRequestHelper helper;
 
         @Override
@@ -44,6 +47,8 @@ public interface ChatSource<I, O> {
                     .ofType(MessageCreate.class)
                     .filter(e -> e.getMember() != null)
                     .filter(e -> e.getChannelId() == Long.parseLong(channel))
+                    .filter(e -> { Boolean bot = e.getAuthor().isBot(); return bot == null || !bot; })
+                    .filter(e -> e.getContent() != null && !TEMP_COMMAND_PATTERN.matcher(e.getContent()).find())
                     .flatMap(e -> helper.getChannel(e.getChannelId()).map(c -> Tuples.of(e, c)))
                     .map(t -> new DiscordMessage(helper, t.getT2().getName(), t.getT1()));
         }
