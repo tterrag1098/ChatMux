@@ -66,11 +66,11 @@ repositories {
 }
 
 dependencies {
-	implementation 'com.discord4j.discord4j:discord4j-gateway:v3-SNAPSHOT'
-	implementation 'com.discord4j.discord4j:discord4j-rest:v3-SNAPSHOT'
+	compile 'com.discord4j.discord4j:discord4j-gateway:v3-SNAPSHOT'
+	compile 'com.discord4j.discord4j:discord4j-rest:v3-SNAPSHOT'
 	compile 'com.google.guava:guava:17.0'
 	compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile 'ch.qos.logback:logback-classic:1.2.1'
     compile 'org.projectlombok:lombok:1.18.2'
-    implementation 'com.github.TheElectronWill.Night-Config:toml:f6ec74babb'
+    compile 'com.github.TheElectronWill.Night-Config:toml:f6ec74babb'
 }
