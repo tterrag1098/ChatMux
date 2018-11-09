@@ -21,8 +21,8 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-archivesBaseName = "TropiBridge"
-group = 'net.tropicraft.bridge'
+archivesBaseName = "ChatMux"
+group = 'com.tterrag.chatmux'
 description = "Chat multiplexer for twitch, mixer, and discord."
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
