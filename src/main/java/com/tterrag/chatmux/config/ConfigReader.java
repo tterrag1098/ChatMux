@@ -13,7 +13,7 @@ public class ConfigReader {
     private ConfigData data;
     
     public ConfigReader() {
-        config = FileConfig.builder("chatmux.toml").concurrent().defaultResource("default_config.toml").build();
+        config = FileConfig.builder("chatmux.toml").concurrent().defaultResource("/default_config.toml").build();
     }
     
     public void save() {
