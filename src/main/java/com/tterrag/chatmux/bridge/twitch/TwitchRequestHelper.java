@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.bridge.twitch.response.UserResponse;
@@ -16,7 +14,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
-@ParametersAreNonnullByDefault
 @Slf4j
 public class TwitchRequestHelper extends RequestHelper {
     

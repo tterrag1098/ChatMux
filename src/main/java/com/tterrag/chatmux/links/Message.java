@@ -1,12 +1,11 @@
 package com.tterrag.chatmux.links;
 
-import javax.annotation.Nullable;
-
 import com.tterrag.chatmux.util.ServiceType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+import reactor.util.annotation.Nullable;
 
 @Value
 @NonFinal

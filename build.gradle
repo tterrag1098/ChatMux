@@ -66,8 +66,8 @@ repositories {
 }
 
 dependencies {
-	compile 'com.discord4j.discord4j:discord4j-gateway:v3-SNAPSHOT'
-	compile 'com.discord4j.discord4j:discord4j-rest:v3-SNAPSHOT'
+	compile 'com.discord4j.discord4j:discord4j-gateway:2532f64'
+	compile 'com.discord4j.discord4j:discord4j-rest:2532f64'
 	compile 'com.google.guava:guava:17.0'
 	compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile 'ch.qos.logback:logback-classic:1.2.1'

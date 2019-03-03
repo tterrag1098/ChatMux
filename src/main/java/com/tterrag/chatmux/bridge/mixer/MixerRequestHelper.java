@@ -1,20 +1,16 @@
 package com.tterrag.chatmux.bridge.mixer;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.bridge.mixer.method.MixerRole;
 import com.tterrag.chatmux.bridge.mixer.response.ChannelResponse;
 import com.tterrag.chatmux.bridge.mixer.response.UserResponse;
-import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.NonNullApi;
 
-@ParametersAreNonnullByDefault
 public class MixerRequestHelper extends RequestHelper {
     
     private final String id, token;

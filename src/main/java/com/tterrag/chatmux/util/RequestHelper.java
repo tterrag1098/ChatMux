@@ -3,9 +3,6 @@ package com.tterrag.chatmux.util;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
-
 import org.reactivestreams.Publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,14 +20,14 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClient.RequestSender;
 import reactor.netty.http.client.HttpClient.ResponseReceiver;
 import reactor.netty.http.client.HttpClientResponse;
+import reactor.util.annotation.NonNull;
 
-@ParametersAreNonnullByDefault
 @Slf4j
 public abstract class RequestHelper {
     
-    protected final @Nonnull ObjectMapper mapper;
+    protected final @NonNull ObjectMapper mapper;
     
-    protected final @Nonnull HttpClient client;
+    protected final @NonNull HttpClient client;
     
     protected RequestHelper(ObjectMapper mapper, String baseUrl) {
         this.mapper = mapper;

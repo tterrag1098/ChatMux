@@ -1,10 +1,5 @@
 package com.tterrag.chatmux.websocket;
 
-import javax.annotation.Nonnull;
-
-import discord4j.gateway.json.GatewayPayload;
-import discord4j.gateway.json.Opcode;
-import discord4j.gateway.json.dispatch.Dispatch;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
@@ -13,6 +8,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
+import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -26,7 +22,7 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
     private final FluxSink<I> receiverSink = receiver.sink(FluxSink.OverflowStrategy.LATEST);
     private final FluxSink<O> senderSink = sender.sink(FluxSink.OverflowStrategy.LATEST); 
         
-    public Mono<Void> connect(@Nonnull String url, FrameParser<I, O> handler) {
+    public Mono<Void> connect(@NonNull String url, FrameParser<I, O> handler) {
         return Mono.defer(() -> {
             // Subscribe each inbound GatewayPayload to the receiver sink
             Disposable inboundSub = handler.inbound()

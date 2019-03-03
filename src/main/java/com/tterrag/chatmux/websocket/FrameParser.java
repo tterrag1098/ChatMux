@@ -4,13 +4,10 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import discord4j.gateway.CloseException;
-import discord4j.gateway.CloseStatus;
+import discord4j.common.close.CloseException;
+import discord4j.common.close.CloseStatus;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
@@ -28,7 +25,6 @@ import reactor.netty.NettyPipeline;
 import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
 
-@ParametersAreNonnullByDefault
 @Slf4j
 @RequiredArgsConstructor
 public class FrameParser<I, O> implements ConnectionObserver {

@@ -13,11 +13,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.tterrag.chatmux.Main;
 
+import discord4j.common.SimpleBucket;
 import discord4j.common.jackson.PossibleModule;
 import discord4j.common.jackson.UnknownPropertyHandler;
+import discord4j.gateway.DefaultGatewayClient;
 import discord4j.gateway.GatewayClient;
 import discord4j.gateway.IdentifyOptions;
-import discord4j.gateway.TokenBucket;
+import discord4j.gateway.RateLimiterTransformer;
 import discord4j.gateway.json.GatewayPayload;
 import discord4j.gateway.json.dispatch.Dispatch;
 import discord4j.gateway.payload.JacksonPayloadReader;
@@ -28,6 +30,8 @@ import discord4j.gateway.retry.RetryOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import reactor.netty.http.client.HttpClient;
 
 public class DecoratedGatewayClient implements WebSocketClient<Dispatch, GatewayPayload<?>> {
     
@@ -60,9 +64,11 @@ public class DecoratedGatewayClient implements WebSocketClient<Dispatch, Gateway
                 
                 PayloadReader reader = new JacksonPayloadReader(mapper);
                 PayloadWriter writer = new JacksonPayloadWriter(mapper);
-                RetryOptions retryOptions = new RetryOptions(Duration.ofSeconds(5), Duration.ofSeconds(120), Integer.MAX_VALUE);
-
-                wrapped = new GatewayClient(reader, writer, retryOptions, token, new IdentifyOptions(0, 1, null), null, new TokenBucket(10, Duration.ofSeconds(5)));
+                RetryOptions retryOptions = new RetryOptions(Duration.ofSeconds(5), Duration.ofSeconds(120), Integer.MAX_VALUE, Schedulers.elastic());
+                wrapped = new DefaultGatewayClient(HttpClient.create().compress(true),
+                        reader, writer, retryOptions, token, 
+                        new IdentifyOptions(0, 1, null), null, 
+                        new RateLimiterTransformer(new SimpleBucket(1, Duration.ofSeconds(6))));
                 endpoint = gateway.get("url").textValue();
                 if (endpoint == null) {
                     throw new IllegalStateException("Invalid endpoint url: " + gateway.get("url"));

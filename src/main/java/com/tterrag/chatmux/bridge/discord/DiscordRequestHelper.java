@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
-import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import discord4j.common.jackson.PossibleModule;
@@ -24,16 +23,14 @@ import discord4j.rest.json.request.MessageCreateRequest;
 import discord4j.rest.json.request.WebhookCreateRequest;
 import discord4j.rest.json.response.ChannelResponse;
 import discord4j.rest.json.response.WebhookResponse;
-import discord4j.rest.request.Router;
+import discord4j.rest.request.DefaultRouter;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.MultipartRequest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 public class DiscordRequestHelper extends RequestHelper {
     
@@ -52,8 +49,8 @@ public class DiscordRequestHelper extends RequestHelper {
         HttpHeaders defaultHeaders = new DefaultHttpHeaders();
         addHeaders(defaultHeaders);
                 
-        final DiscordWebClient httpClient = new DiscordWebClient(super.client, defaultHeaders, ExchangeStrategies.withJacksonDefaults(mapper));
-        this.client = new RestClient(new Router(httpClient, Schedulers.elastic()));
+        final DiscordWebClient httpClient = new DiscordWebClient(super.client, ExchangeStrategies.jackson(mapper), token);
+        this.client = new RestClient(new DefaultRouter(httpClient));
     }
     
     @Override
@@ -82,7 +79,7 @@ public class DiscordRequestHelper extends RequestHelper {
                     try (InputStream in = avatar) {
                         byte[] image = ByteStreams.toByteArray(in);
                         String encoded = Base64.getEncoder().encodeToString(image);
-                        return client.getWebhookService().createWebhook(channel, new WebhookCreateRequest(name, "data:image/png;base64," + encoded));
+                        return client.getWebhookService().createWebhook(channel, new WebhookCreateRequest(name, "data:image/png;base64," + encoded), null);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -98,15 +95,15 @@ public class DiscordRequestHelper extends RequestHelper {
     }
 
     public Disposable deleteMessage(long channelId, long id) {
-        return client.getChannelService().deleteMessage(channelId, id).subscribe();
+        return client.getChannelService().deleteMessage(channelId, id, null).subscribe();
     }
 
     public Disposable kick(long guildId, long id) {
-        return client.getGuildService().removeGuildMember(guildId, id).subscribe();
+        return client.getGuildService().removeGuildMember(guildId, id, null).subscribe();
     }
     
     public Disposable ban(long guildId, long id, int daysToDelete, String reason) {
-        return client.getGuildService().createGuildBan(guildId, id, ImmutableMap.of("delete-message-days", daysToDelete, "reason", reason)).subscribe();
+        return client.getGuildService().createGuildBan(guildId, id, ImmutableMap.of("delete-message-days", daysToDelete, "reason", reason), null).subscribe();
     }
     
     public Disposable addReaction(long channelId, long messageId, String id, String name) {
