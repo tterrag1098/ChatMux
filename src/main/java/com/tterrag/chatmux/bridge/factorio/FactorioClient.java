@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,6 +55,8 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
             + "(?<message>.+)$"
     );
     
+    public static final String GLOBAL_TEAM = "global";
+    
     private final File input, output;
 
     @Getter(onMethod = @__({@Override}))
@@ -73,24 +74,25 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
                 Matcher m = CHAT_MSG.matcher(line);
                 if (m.matches()) {
                     String type = m.group("type");
-                    if (type.equals("SHOUT") || m.group("team") == null) {
-                        inboundSink.next(new FactorioMessage(m.group("user"), m.group("message"), false));
-                    }
+                    String team = "SHOUT".equals(type) ? GLOBAL_TEAM : m.group("team");
+                    inboundSink.next(new FactorioMessage(m.group("user"), team, m.group("message"), false));
                     return;
                 }
                 m = JOIN_LEAVE_MSG.matcher(line);
                 if (m.matches()) {
-                    inboundSink.next(new FactorioMessage(m.group("user"), m.group("message"), true));
+                    inboundSink.next(new FactorioMessage(m.group("user"), GLOBAL_TEAM, m.group("message"), true));
+                    return;
                 }
                 m = COMMAND_MSG.matcher(line);
                 if (m.matches()) {
-                    inboundSink.next(new FactorioMessage(m.group("user"), "Ran command: `" + m.group("message") + "`", true));
+                    inboundSink.next(new FactorioMessage(m.group("user"), GLOBAL_TEAM, "Ran command: `" + m.group("message") + "`", true));
+                    return;
                 }
             }
           
             @Override
             public void handle(Exception ex) {
-                inboundSink.next(new FactorioMessage("ERROR", ex.toString(), false));
+                inboundSink.next(new FactorioMessage("ERROR", GLOBAL_TEAM, ex.toString(), false));
             }
             
             @Override
@@ -111,7 +113,7 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
                       out.write((s + "\n").getBytes());
                   }
                   return s;
-              }).doOnError(t -> inboundSink.next(new FactorioMessage("ERROR", t.toString(), false)))
+              }).doOnError(t -> inboundSink.next(new FactorioMessage("ERROR", GLOBAL_TEAM, t.toString(), false)))
           ).then())
           .then();
     }

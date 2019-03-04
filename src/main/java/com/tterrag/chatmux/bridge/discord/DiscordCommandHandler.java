@@ -132,7 +132,7 @@ public class DiscordCommandHandler {
             throw new RuntimeException("Resource not found: logo.png");
         }
         
-        Flux<Message> source = LinkManager.INSTANCE.connect(from);
+        Flux<? extends Message> source = LinkManager.INSTANCE.connect(from);
 
         Mono<Disposable> ret;
         

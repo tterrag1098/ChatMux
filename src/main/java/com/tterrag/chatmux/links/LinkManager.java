@@ -105,7 +105,7 @@ public enum LinkManager {
     private final MixerRequestHelper mixerHelper = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
     private final TwitchRequestHelper twitchHelper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
     
-    public <I, O> Flux<Message> connect(Channel<I, O> channel) {
+    public <I, O> Flux<? extends Message> connect(Channel<I, O> channel) {
         ServiceType<I, O> type = channel.getType();
         if (type == ServiceType.DISCORD) {
             return new ChatSource.Discord(discordHelper).connect(WebSocketFactory.get(ServiceType.DISCORD).getSocket(channel.getName()), channel.getName());

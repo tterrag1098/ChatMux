@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import com.tterrag.chatmux.bridge.discord.DiscordMessage;
 import com.tterrag.chatmux.bridge.discord.DiscordRequestHelper;
+import com.tterrag.chatmux.bridge.factorio.FactorioClient;
 import com.tterrag.chatmux.bridge.factorio.FactorioMessage;
 import com.tterrag.chatmux.bridge.mixer.MixerMessage;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
@@ -108,8 +109,9 @@ public interface ChatSource<I, O> {
         }
         
         @Override
-        public Flux<Message> connect(WebSocketClient<FactorioMessage, String> client, String channel) {
-            return client.inbound().map(Function.identity());
+        public Flux<FactorioMessage> connect(WebSocketClient<FactorioMessage, String> client, String channel) {
+            return client.inbound()
+                    .filter(m -> FactorioClient.GLOBAL_TEAM.equals(channel) || m.getChannel().equals(channel));
         }
     }
 }

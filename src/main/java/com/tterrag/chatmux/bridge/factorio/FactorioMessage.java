@@ -8,8 +8,8 @@ import reactor.core.publisher.Mono;
 public class FactorioMessage extends Message {
     boolean action;
     
-    public FactorioMessage(String username, String message, boolean action) {
-        super(ServiceType.FACTORIO, "", "", username, message, null);
+    public FactorioMessage(String username, String team, String message, boolean action) {
+        super(ServiceType.FACTORIO, team, team, username, message, null);
         this.action = action;
     }
     

@@ -40,7 +40,7 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
 
             return HttpClient.create()
                     .observe((connection, newState) -> log.debug("{} {}", newState, connection))
-                    .wiretap()
+                    .wiretap(true)
                     .websocket()
                     .uri(url)
                     .handle(handler::handle)
