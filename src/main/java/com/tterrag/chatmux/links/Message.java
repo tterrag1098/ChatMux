@@ -42,6 +42,6 @@ public abstract class Message {
     
     @Override
     public String toString() {
-        return "[" + source + "/" + channel + "] <" + user + "> " + content;
+        return "[" + getSource() + "/" + getChannel() + "] <" + getUser() + "> " + getContent();
     }
 }

@@ -6,8 +6,11 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.Main;
+import com.tterrag.chatmux.bridge.factorio.FactorioMessage;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
@@ -108,8 +111,11 @@ public class DiscordCommandHandler {
             sources.doOnError(IllegalArgumentException.class, e -> discordHelper.sendMessage(channel, e.getMessage()))
                    .doOnError(Throwable::printStackTrace)
                    .subscribe(t -> {
-                       LinkManager.INSTANCE.removeLink(t.getT1(), t.getT2());
-                       discordHelper.sendMessage(channel, "Link broken! " + t.getT1() + " -/> " + t.getT2());
+                       if (LinkManager.INSTANCE.removeLink(t.getT1(), t.getT2())) {
+                           discordHelper.sendMessage(channel, "Link broken! " + t.getT1() + " -/> " + t.getT2());
+                       } else {
+                           discordHelper.sendMessage(channel, "No such link to remove");
+                       }
                    });
         } else if (args[0].equals("~links")) {
             StringBuilder msg = new StringBuilder();
@@ -136,6 +142,7 @@ public class DiscordCommandHandler {
             long channel = Long.parseLong(to.getName());
             sub = source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, new WebhookMessage(m.getContent(), m.getUser() + " (" + m.getSource() + "/" + m.getChannel() + ")", m.getAvatar()).toString())).map(r -> Tuples.of(m, r)))
                         .doOnNext(t -> discordHelper.getChannel(channel).subscribe(c -> LinkManager.INSTANCE.linkMessage(t.getT1(), new DiscordMessage(discordHelper, Long.toString(channel), t.getT2(), c.getGuildId()))))
+                        .filter(t -> Main.cfg.getModerators() != null || Main.cfg.getAdmins() != null)
                         .doOnNext(t -> discordHelper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE))
                         .map(t -> Tuples.of(t.getT2(), discord.inbound().ofType(MessageReactionAdd.class)
                                 .filter(mra -> mra.getUserId() != Main.botUser.getId())
@@ -156,6 +163,10 @@ public class DiscordCommandHandler {
             WebSocketClient<IRCEvent, String> twitch = WebSocketFactory.get(ServiceType.TWITCH).getSocket(to.getName());
             new ChatSource.Twitch(twitchHelper).connect(twitch, to.getName());
             sub = source.subscribe(m -> twitch.outbound().next("PRIVMSG #" + to.getName().toLowerCase(Locale.ROOT) + " :" + (raw ? m.getContent() : m)));
+        } else if (to.getType() == ServiceType.FACTORIO) {
+            WebSocketClient<FactorioMessage, String> factorio = WebSocketFactory.get(ServiceType.FACTORIO).getSocket(to.getName());
+            new ChatSource.Factorio().connect(factorio, null);
+            sub = source.subscribe(m -> factorio.outbound().next(raw ? m.getContent() : m.toString()));
         } else {
             throw new IllegalArgumentException("Invalid target service");
         }

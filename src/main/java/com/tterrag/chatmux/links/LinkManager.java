@@ -118,6 +118,8 @@ public enum LinkManager {
             return new ChatSource.Twitch(twitchHelper).connect(WebSocketFactory.get(ServiceType.TWITCH).getSocket(channel.getName()), channel.getName());
         } else if (type == ServiceType.MIXER) {
             return new ChatSource.Mixer(mixerHelper).connect(WebSocketFactory.get(ServiceType.MIXER).getSocket(channel.getName()), channel.getName());
+        } else if (type == ServiceType.FACTORIO) {
+            return new ChatSource.Factorio().connect(WebSocketFactory.get(ServiceType.FACTORIO).getSocket(channel.getName()), channel.getName());
         }
         throw new IllegalArgumentException("Unknown service type");
     }
@@ -152,16 +154,20 @@ public enum LinkManager {
         saveLinks();
     }
     
-    public void removeLink(Channel<?, ?> from, Channel<?, ?> to) {
+    public boolean removeLink(Channel<?, ?> from, Channel<?, ?> to) {
         Multimap<String, Link> typeLinks = links.get(from.getType());
         Collection<Link> channelLinks = typeLinks.get(from.getName());
         List<Link> toRemove = channelLinks.stream().filter(c -> c.getTo().equals(to)).collect(Collectors.toList());
+        if (toRemove.isEmpty()) {
+            return false;
+        }
         toRemove.forEach(l -> l.getSubscriber().dispose());
         channelLinks.removeAll(toRemove);
         if (channelLinks.isEmpty()) {
             WebSocketFactory.get(from.getType()).disposeSocket(from.getName());
         }
         saveLinks();
+        return true;
     }
     
     public List<Link> getLinks() {

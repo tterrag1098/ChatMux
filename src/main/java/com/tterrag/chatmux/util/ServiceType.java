@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.tterrag.chatmux.bridge.factorio.FactorioMessage;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
@@ -45,7 +46,8 @@ public final class ServiceType<I, O> {
     public static final ServiceType<Dispatch, GatewayPayload<?>> DISCORD = new ServiceType<>("discord");
     public static final ServiceType<MixerEvent, MixerMethod> MIXER = new ServiceType<>("mixer");
     public static final ServiceType<IRCEvent, String> TWITCH = new ServiceType<>("twitch");
-    
+    public static final ServiceType<FactorioMessage, String> FACTORIO = new ServiceType<>("factorio");
+
     public static final ServiceType<?, ?> byName(String name) {
         return types.get(name.toLowerCase(Locale.ROOT));
     }

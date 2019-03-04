@@ -1,5 +1,6 @@
 package com.tterrag.chatmux.links;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -7,6 +8,8 @@ import java.util.function.Function;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.tterrag.chatmux.Main;
+import com.tterrag.chatmux.bridge.factorio.FactorioClient;
+import com.tterrag.chatmux.bridge.factorio.FactorioMessage;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
@@ -29,6 +32,7 @@ public abstract class WebSocketFactory<I, O> {
             .put(ServiceType.DISCORD, new Discord())
             .put(ServiceType.TWITCH, new Twitch())
             .put(ServiceType.MIXER, new Mixer())
+            .put(ServiceType.FACTORIO, new Factorio())
             .build();
     
     public abstract WebSocketClient<I, O> getSocket(String channel);
@@ -113,6 +117,27 @@ public abstract class WebSocketFactory<I, O> {
         @Override
         public void disposeSocket(String channel) {
             twitch.outbound().next("PART #" + channel);
+        }
+    }
+    
+    private static class Factorio extends WebSocketFactory<FactorioMessage, String> {
+
+        private boolean connected;
+
+        private final FactorioClient factorio = new FactorioClient(new File(Main.cfg.getFactorio().getInput()), new File(Main.cfg.getFactorio().getOutput()));
+
+        @Override
+        public WebSocketClient<FactorioMessage, String> getSocket(String channel) {
+            if (!connected) {
+                factorio.connect().subscribe();
+                connected = true;
+            }
+            return factorio;
+        }
+
+        @Override
+        public void disposeSocket(String channel) {
+            
         }
     }
 }

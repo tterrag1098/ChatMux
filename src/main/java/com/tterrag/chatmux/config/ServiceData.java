@@ -44,4 +44,14 @@ public class ServiceData {
         @Path("client_id")
         private String clientId;
     }
+    
+    @EqualsAndHashCode
+    @ToString
+    @Getter
+    public static class Factorio {
+        
+        private String input;
+        
+        private String output;
+    }
 }

@@ -1,10 +1,12 @@
 package com.tterrag.chatmux.links;
 
 import java.util.Locale;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import com.tterrag.chatmux.bridge.discord.DiscordMessage;
 import com.tterrag.chatmux.bridge.discord.DiscordRequestHelper;
+import com.tterrag.chatmux.bridge.factorio.FactorioMessage;
 import com.tterrag.chatmux.bridge.mixer.MixerMessage;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
@@ -26,7 +28,7 @@ public interface ChatSource<I, O> {
     
     public ServiceType<I, O> getType();
     
-    public Flux<Message> connect(WebSocketClient<I, O> client, String channel);
+    public Flux<? extends Message> connect(WebSocketClient<I, O> client, String channel);
     
     @RequiredArgsConstructor
     class Discord implements ChatSource<Dispatch, GatewayPayload<?>> {
@@ -95,6 +97,19 @@ public interface ChatSource<I, O> {
                                     .flatMapMany(Flux::fromArray)
                                     .next()
                                     .map(u -> new TwitchMessage(client, e, u.displayName, u.avatarUrl)));
+        }
+    }
+    
+    class Factorio implements ChatSource<FactorioMessage, String> {
+        
+        @Override
+        public ServiceType<FactorioMessage, String> getType() {
+            return ServiceType.FACTORIO;
+        }
+        
+        @Override
+        public Flux<Message> connect(WebSocketClient<FactorioMessage, String> client, String channel) {
+            return client.inbound().map(Function.identity());
         }
     }
 }
