@@ -3,6 +3,8 @@ package com.tterrag.chatmux.bridge.factorio;
 import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.util.ServiceType;
 
+import reactor.core.publisher.Mono;
+
 public class FactorioMessage extends Message {
     boolean action;
     
@@ -21,16 +23,18 @@ public class FactorioMessage extends Message {
     }
     
     @Override
-    public void delete() {} // Impossible
-    
-    @Override
-    public void kick() {
-        // TODO
+    public Mono<Void> delete() {
+        return Mono.empty();  // Impossible
     }
     
     @Override
-    public void ban() {
-        // TODO
+    public Mono<Void> kick() {
+        return Mono.empty();
+    }
+    
+    @Override
+    public Mono<Void> ban() {
+        return Mono.empty();
     }
 
     @Override

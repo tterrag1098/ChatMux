@@ -3,6 +3,8 @@ package com.tterrag.chatmux.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.electronwill.nightconfig.core.conversion.PreserveNotNull;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
@@ -22,8 +24,10 @@ public class ConfigData {
     
     private ServiceData.Mixer mixer;
     
+    @PreserveNotNull
     private List<PermissionEntry> admins = new ArrayList<>();
     
+    @PreserveNotNull
     private List<PermissionEntry> moderators = new ArrayList<>();
 
 }

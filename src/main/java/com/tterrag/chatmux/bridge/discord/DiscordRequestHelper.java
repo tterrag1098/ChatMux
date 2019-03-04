@@ -29,7 +29,6 @@ import discord4j.rest.util.MultipartRequest;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
-import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
 public class DiscordRequestHelper extends RequestHelper {
@@ -94,24 +93,24 @@ public class DiscordRequestHelper extends RequestHelper {
         return client.getUserService().getUser(user);
     }
 
-    public Disposable deleteMessage(long channelId, long id) {
-        return client.getChannelService().deleteMessage(channelId, id, null).subscribe();
+    public Mono<Void> deleteMessage(long channelId, long id) {
+        return client.getChannelService().deleteMessage(channelId, id, null);
     }
 
-    public Disposable kick(long guildId, long id) {
-        return client.getGuildService().removeGuildMember(guildId, id, null).subscribe();
+    public Mono<Void> kick(long guildId, long id) {
+        return client.getGuildService().removeGuildMember(guildId, id, null);
     }
     
-    public Disposable ban(long guildId, long id, int daysToDelete, String reason) {
-        return client.getGuildService().createGuildBan(guildId, id, ImmutableMap.of("delete-message-days", daysToDelete, "reason", reason), null).subscribe();
+    public Mono<Void> ban(long guildId, long id, int daysToDelete, String reason) {
+        return client.getGuildService().createGuildBan(guildId, id, ImmutableMap.of("delete-message-days", daysToDelete, "reason", reason), null);
     }
     
-    public Disposable addReaction(long channelId, long messageId, String id, String name) {
-        return client.getChannelService().createReaction(channelId, messageId, (id == null ? name : id + ":" + name)).subscribe();
+    public Mono<Void> addReaction(long channelId, long messageId, String id, String name) {
+        return client.getChannelService().createReaction(channelId, messageId, (id == null ? name : id + ":" + name));
     }
 
-    public Disposable removeReaction(long channelId, long userId, long messageId, String id, String name) {
-        return client.getChannelService().deleteReaction(channelId, messageId, (id == null ? name : id + ":" + name), userId).subscribe();
+    public Mono<Void> removeReaction(long channelId, long userId, long messageId, String id, String name) {
+        return client.getChannelService().deleteReaction(channelId, messageId, (id == null ? name : id + ":" + name), userId);
     }
     
     public Mono<MessageResponse> executeWebhook(WebhookResponse webhook, String payload) {
@@ -126,7 +125,7 @@ public class DiscordRequestHelper extends RequestHelper {
         return client.getUserService().getCurrentUser();
     }
 
-    public Disposable sendMessage(long channel, String string) {
-        return client.getChannelService().createMessage(channel, new MultipartRequest(new MessageCreateRequest(string, null, false, null))).subscribe();
+    public Mono<MessageResponse> sendMessage(long channel, String string) {
+        return client.getChannelService().createMessage(channel, new MultipartRequest(new MessageCreateRequest(string, null, false, null)));
     }
 }

@@ -5,6 +5,8 @@ import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.util.ServiceType;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
+import reactor.core.publisher.Mono;
+
 public class TwitchMessage extends Message {
     
     private final WebSocketClient<?, String> client;
@@ -17,17 +19,20 @@ public class TwitchMessage extends Message {
     }
 
     @Override
-    public void delete() {
+    public Mono<Void> delete() {
         client.outbound().next("PRIVMSG #" + getChannel() + " :/delete " + message.getTags().get(IRCEvent.Message.Tag.id));
+        return Mono.empty();
     }
     
     @Override
-    public void kick() {
+    public Mono<Void> kick() {
         client.outbound().next("PRIVMSG #" + getChannel() + " :/timeout " + message.getUser() + " 1");
+        return Mono.empty();
     }
     
     @Override
-    public void ban() {
+    public Mono<Void> ban() {
         client.outbound().next("PRIVMSG #" + getChannel() + " :/ban " + message.getUser());
+        return Mono.empty();
     }
 }

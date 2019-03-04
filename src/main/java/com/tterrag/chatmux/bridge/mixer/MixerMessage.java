@@ -7,6 +7,8 @@ import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.util.ServiceType;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
+import reactor.core.publisher.Mono;
+
 public class MixerMessage extends Message {
     
     private final MixerRequestHelper helper;
@@ -21,17 +23,19 @@ public class MixerMessage extends Message {
     }
 
     @Override
-    public void delete() {
+    public Mono<Void> delete() {
         client.outbound().next(new MixerMethod(MethodType.DELETE_MESSAGE, message.id.toString()));
+        return Mono.empty();
     }
 
     @Override
-    public void kick() {
+    public Mono<Void> kick() {
         client.outbound().next(new MixerMethod(MethodType.PURGE, message.username));
+        return Mono.empty();
     }
 
     @Override
-    public void ban() {
-        helper.ban(message.channel, message.userId);
+    public Mono<Void> ban() {
+        return helper.ban(message.channel, message.userId);
     }
 }

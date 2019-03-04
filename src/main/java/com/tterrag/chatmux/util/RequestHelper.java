@@ -13,7 +13,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
 import reactor.netty.http.client.HttpClient;
@@ -79,22 +78,22 @@ public abstract class RequestHelper {
         return post(endpoint, payload).<T>responseSingle((r, buf) -> handleResponse(r, buf, type)).doOnError(t -> log.error("Error during POST", t));
     }
 
-    protected Disposable postVoid(String endpoint, Object payload) {
-        return post(endpoint, payload).response().doOnError(Throwable::printStackTrace).subscribe();
+    protected Mono<Void> postVoid(String endpoint, Object payload) {
+        return post(endpoint, payload).response().doOnError(Throwable::printStackTrace).then();
     }
     
-    public Disposable delete(String endpoint) {
-        return request(endpoint, HttpMethod.DELETE).response().doOnError(Throwable::printStackTrace).subscribe();
+    public Mono<Void> delete(String endpoint) {
+        return request(endpoint, HttpMethod.DELETE).response().doOnError(Throwable::printStackTrace).then();
     }
     
-    public Disposable put(String endpoint) {
-        return request(endpoint, HttpMethod.PUT).response().doOnNext(System.out::println).doOnError(Throwable::printStackTrace).subscribe();
+    public Mono<Void> put(String endpoint) {
+        return request(endpoint, HttpMethod.PUT).response().doOnNext(System.out::println).doOnError(Throwable::printStackTrace).then();
     }
     
-    public Disposable patch(String endpoint, Object payload) {
+    public Mono<Void> patch(String endpoint, Object payload) {
         return request(endpoint, HttpMethod.PATCH)
                 .send(encodePayload(payload))
                 .response()
-                .subscribe();
+                .then();
     }
 }

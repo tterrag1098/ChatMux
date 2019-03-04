@@ -14,15 +14,10 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.type.SimpleType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.databind.util.Converter;
 import com.google.common.cache.CacheBuilder;
@@ -41,7 +36,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
-import reactor.util.annotation.NonNull;
+import reactor.util.annotation.Nullable;
 
 public enum LinkManager {
     
@@ -74,7 +69,7 @@ public enum LinkManager {
 
         @Override
         public Link convert(Link value) {
-            Disposable sub = DiscordCommandHandler.connect(INSTANCE.discordHelper, INSTANCE.mixerHelper, INSTANCE.twitchHelper, value.getFrom(), value.getTo(), value.isRaw());
+            Disposable sub = DiscordCommandHandler.connect(INSTANCE.discordHelper, INSTANCE.mixerHelper, INSTANCE.twitchHelper, value.getFrom(), value.getTo(), value.isRaw()).block();
             return new Link(value.getFrom(), value.getTo(), value.isRaw(), sub);
         }
 
@@ -101,7 +96,7 @@ public enum LinkManager {
         
     private final LoadingCache<MessageKey, List<Message>> messageCache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).recordStats().build(new CacheLoader<MessageKey, List<Message>>() {
         @Override
-        public List<Message> load(@NonNull MessageKey key) throws Exception {
+        public List<Message> load(@Nullable MessageKey key) throws Exception {
             return new ArrayList<>();
         }
     });

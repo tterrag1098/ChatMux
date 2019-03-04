@@ -86,7 +86,7 @@ public class DiscordCommandHandler {
         return ret.map(name -> new Channel<>(name, type));
     }
 
-    public void handle(long channel, long author, String... args) {
+    public Mono<?> handle(long channel, long author, String... args) {
 
         if (args.length >= 2 && (args[0].equals("+link") || args[0].equals("+linkraw"))) {            
             Mono<Channel<?, ?>> from = getChannel(args[1]);
@@ -96,20 +96,19 @@ public class DiscordCommandHandler {
             
             final boolean raw = args[0].equals("+linkraw");
 
-            sources.zipWhen(t -> Mono.just(connect(discordHelper, mixerHelper, twitchHelper, t.getT1(), t.getT2(), raw)), (t, d) -> Tuples.of(t.getT1(), t.getT2(), d))
+            return sources.zipWhen(t -> connect(discordHelper, mixerHelper, twitchHelper, t.getT1(), t.getT2(), raw), (t, d) -> Tuples.of(t.getT1(), t.getT2(), d))
                    .doOnNext(t -> LinkManager.INSTANCE.addLink(t.getT1(), t.getT2(), raw, t.getT3()))
                    .doOnError(IllegalArgumentException.class, e -> discordHelper.sendMessage(channel, e.getMessage()))
-                   .doOnError(Throwable::printStackTrace)
-                   .subscribe();
+                   .doOnError(Throwable::printStackTrace);
         } else if (args.length >= 2 && args[0].equals("-link")) {
             Mono<Channel<?, ?>> from = getChannel(args[1]);
             Mono<Channel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new Channel<>(Long.toString(channel), ServiceType.DISCORD));
             
             Mono<Tuple2<Channel<?, ?>, Channel<?, ?>>> sources = Mono.zip(from, to);
 
-            sources.doOnError(IllegalArgumentException.class, e -> discordHelper.sendMessage(channel, e.getMessage()))
+            return sources.doOnError(IllegalArgumentException.class, e -> discordHelper.sendMessage(channel, e.getMessage()))
                    .doOnError(Throwable::printStackTrace)
-                   .subscribe(t -> {
+                   .doOnNext(t -> {
                        if (LinkManager.INSTANCE.removeLink(t.getT1(), t.getT2())) {
                            discordHelper.sendMessage(channel, "Link broken! " + t.getT1() + " -/> " + t.getT2());
                        } else {
@@ -121,11 +120,12 @@ public class DiscordCommandHandler {
             for (Link link : LinkManager.INSTANCE.getLinks()) {
                  msg.append(link).append("\n");
             }
-            discordHelper.sendMessage(channel, msg.toString());
+            return discordHelper.sendMessage(channel, msg.toString());
         }
+        return Mono.empty();
     }
     
-    public static Disposable connect(DiscordRequestHelper discordHelper, MixerRequestHelper mixerHelper, TwitchRequestHelper twitchHelper, Channel<?, ?> from, Channel<?, ?> to, boolean raw) {
+    public static Mono<Disposable> connect(DiscordRequestHelper discordHelper, MixerRequestHelper mixerHelper, TwitchRequestHelper twitchHelper, Channel<?, ?> from, Channel<?, ?> to, boolean raw) {
 
         InputStream in = Main.class.getResourceAsStream("/logo.png");
         if (in == null) {
@@ -134,42 +134,39 @@ public class DiscordCommandHandler {
         
         Flux<Message> source = LinkManager.INSTANCE.connect(from);
 
-        Disposable sub;
+        Mono<Disposable> ret;
         
         if (to.getType() == ServiceType.DISCORD) {        
             WebSocketClient<Dispatch, GatewayPayload<?>> discord = WebSocketFactory.get(ServiceType.DISCORD).getSocket(to.getName());
             long channel = Long.parseLong(to.getName());
-            sub = source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, new WebhookMessage(m.getContent(), m.getUser() + " (" + m.getSource() + "/" + m.getChannel() + ")", m.getAvatar()).toString())).map(r -> Tuples.of(m, r)))
-                        .doOnNext(t -> discordHelper.getChannel(channel).subscribe(c -> LinkManager.INSTANCE.linkMessage(t.getT1(), new DiscordMessage(discordHelper, Long.toString(channel), t.getT2(), c.getGuildId()))))
-                        .filter(t -> Main.cfg.getModerators() != null || Main.cfg.getAdmins() != null)
-                        .doOnNext(t -> discordHelper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE))
-                        .map(t -> Tuples.of(t.getT2(), discord.inbound().ofType(MessageReactionAdd.class)
-                                .filterWhen(mra -> Main.botUser.map(UserResponse::getId).map(id -> id != mra.getUserId()))
+            Disposable sub = 
+                  source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, new WebhookMessage(m.getContent(), m.getUser() + " (" + m.getSource() + "/" + m.getChannel() + ")", m.getAvatar()).toString())).map(r -> Tuples.of(m, r)))
+                        .flatMap(t -> discordHelper.getChannel(channel).doOnNext(c -> LinkManager.INSTANCE.linkMessage(t.getT1(), new DiscordMessage(discordHelper, Long.toString(channel), t.getT2(), c.getGuildId()))).thenReturn(t))
+                        .filter(t -> !Main.cfg.getModerators().isEmpty() || !Main.cfg.getAdmins().isEmpty())
+                        .flatMap(t -> discordHelper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE).thenReturn(t))
+                        .flatMap(t -> discord.inbound().ofType(MessageReactionAdd.class)
+                                .take(Duration.ofSeconds(5))
+                                .filterWhen(mra -> discordHelper.getOurUser().map(UserResponse::getId).map(id -> id != mra.getUserId()))
                                 .filter(mra -> mra.getMessageId() == t.getT2().getId())
                                 .filter(mra -> mra.getEmoji().getName().equals(ADMIN_EMOTE))
-                                .doOnNext(mra -> discordHelper.deleteMessage(mra.getChannelId(), mra.getMessageId()))
-                                .subscribe(mra -> t.getT1().delete())))
-                        .subscribe(tuple -> Mono.just(tuple).delayElement(Duration.ofMinutes(1)).subscribe(t -> {
-                            discordHelper.getOurUser().subscribe(u -> discordHelper.removeReaction(t.getT1().getChannelId(), u.getId(), t.getT1().getId(), null, ADMIN_EMOTE));
-                            t.getT2().dispose();
-                        }));
-            discordHelper.sendMessage(channel, "Link established! " + from + " -> " + to);
+                                .next()
+                                .flatMap(mra -> discordHelper.deleteMessage(mra.getChannelId(), mra.getMessageId()).and(t.getT1().delete()).thenReturn(t.getT2()))
+                                .switchIfEmpty(discordHelper.getOurUser().flatMap(u -> discordHelper.removeReaction(t.getT2().getChannelId(), u.getId(), t.getT2().getId(), null, ADMIN_EMOTE)).thenReturn(t.getT2())))
+                        .subscribe();
+            ret = discordHelper.sendMessage(channel, "Link established! " + from + " -> " + to).thenReturn(sub);
         } else if (to.getType() == ServiceType.MIXER) {
             WebSocketClient<MixerEvent, MixerMethod> mixer = WebSocketFactory.get(ServiceType.MIXER).getSocket(to.getName());
-            new ChatSource.Mixer(mixerHelper).connect(mixer, to.getName());
-            sub = source.subscribe(m -> mixer.outbound().next(new MixerMethod(MethodType.MESSAGE, (raw ? m.getContent() : m.toString()))));
+            ret = Mono.just(source.subscribe(m -> mixer.outbound().next(new MixerMethod(MethodType.MESSAGE, (raw ? m.getContent() : m.toString())))));
         } else if (to.getType() == ServiceType.TWITCH) {
             WebSocketClient<IRCEvent, String> twitch = WebSocketFactory.get(ServiceType.TWITCH).getSocket(to.getName());
-            new ChatSource.Twitch(twitchHelper).connect(twitch, to.getName());
-            sub = source.subscribe(m -> twitch.outbound().next("PRIVMSG #" + to.getName().toLowerCase(Locale.ROOT) + " :" + (raw ? m.getContent() : m)));
+            ret = Mono.just(source.subscribe(m -> twitch.outbound().next("PRIVMSG #" + to.getName().toLowerCase(Locale.ROOT) + " :" + (raw ? m.getContent() : m))));
         } else if (to.getType() == ServiceType.FACTORIO) {
             WebSocketClient<FactorioMessage, String> factorio = WebSocketFactory.get(ServiceType.FACTORIO).getSocket(to.getName());
-            new ChatSource.Factorio().connect(factorio, null);
-            sub = source.subscribe(m -> factorio.outbound().next(raw ? m.getContent() : m.toString()));
+            ret = Mono.just(source.subscribe(m -> factorio.outbound().next(raw ? m.getContent() : m.toString())));
         } else {
             throw new IllegalArgumentException("Invalid target service");
         }
         
-        return sub;
+        return ret;
     }
 }

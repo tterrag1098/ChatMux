@@ -5,6 +5,7 @@ import com.tterrag.chatmux.util.ServiceType;
 
 import discord4j.common.json.MessageResponse;
 import discord4j.gateway.json.dispatch.MessageCreate;
+import reactor.core.publisher.Mono;
 
 public class DiscordMessage extends Message {
     
@@ -34,23 +35,25 @@ public class DiscordMessage extends Message {
     }
 
     @Override
-    public void delete() {
-        helper.deleteMessage(channel, id);
+    public Mono<Void> delete() {
+        return helper.deleteMessage(channel, id);
     }
 
     @Override
-    public void kick() {
+    public Mono<Void> kick() {
         Long guildId = guild;
         if (guildId != null) {
-            helper.kick(guildId, author);
+            return helper.kick(guildId, author);
         }
+        return Mono.empty();
     }
 
     @Override
-    public void ban() {
+    public Mono<Void> ban() {
         Long guildId = guild;
         if (guildId != null) {
-            helper.ban(guildId, author, 0, "ChatMux ban");
+            return helper.ban(guildId, author, 0, "ChatMux ban");
         }
+        return Mono.empty();
     }
 }

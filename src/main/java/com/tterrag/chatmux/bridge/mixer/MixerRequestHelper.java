@@ -7,9 +7,7 @@ import com.tterrag.chatmux.bridge.mixer.response.UserResponse;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
-import reactor.util.annotation.NonNullApi;
 
 public class MixerRequestHelper extends RequestHelper {
     
@@ -29,12 +27,12 @@ public class MixerRequestHelper extends RequestHelper {
         headers.add("User-Agent", "TwitchBot (https://tropicraft.net, 1.0)");
     }
     
-    public Disposable addRoles(int channel, int userId, MixerRole[] roles) {
+    public Mono<Void> addRoles(int channel, int userId, MixerRole... roles) {
         return patch("/channels/" + channel + "/users/" + userId, roles);
     }
 
-    public Disposable ban(int channel, int userId) {
-        return addRoles(channel, userId, new MixerRole[] { MixerRole.BANNED });
+    public Mono<Void> ban(int channel, int userId) {
+        return addRoles(channel, userId, MixerRole.BANNED);
     }
     
     public Mono<ChannelResponse> getChannel(int id) {

@@ -42,7 +42,7 @@ public class Main {
         
         Mono<Void> commandListener = discord.inbound()
                 .ofType(MessageCreate.class)
-                .doOnNext(mc -> commands.handle(mc.getChannelId(), mc.getAuthor().getId(), mc.getContent().split("\\s+")))
+                .flatMap(mc -> commands.handle(mc.getChannelId(), mc.getAuthor().getId(), mc.getContent().split("\\s+")))
                 .doOnError(Throwable::printStackTrace)
                 .then();
         
