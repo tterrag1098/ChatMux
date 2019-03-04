@@ -47,6 +47,15 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
             + "(?<message>.+)$"
     );
     
+    private static final Pattern COMMAND_MSG = Pattern.compile(
+            TIMESTAMP_REGEX + "\\s"
+            + "\\[(?<type>COMMAND)\\]\\s"
+            + "(?!<server>)(?<user>\\S+)\\s*"
+            + "(?:\\[(?<team>[^\\]]+)\\])?\\s*"
+            + "(?:\\(command\\)):\\s*"
+            + "(?<message>.+)$"
+    );
+    
     private final File input, output;
 
     @Getter(onMethod = @__({@Override}))
@@ -72,6 +81,10 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
                 m = JOIN_LEAVE_MSG.matcher(line);
                 if (m.matches()) {
                     inboundSink.next(new FactorioMessage(m.group("user"), m.group("message"), true));
+                }
+                m = COMMAND_MSG.matcher(line);
+                if (m.matches()) {
+                    inboundSink.next(new FactorioMessage(m.group("user"), "Ran command: `" + m.group("message") + "`", true));
                 }
             }
           

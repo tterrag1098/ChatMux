@@ -6,8 +6,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.factorio.FactorioMessage;
@@ -26,6 +24,7 @@ import com.tterrag.chatmux.links.WebSocketFactory;
 import com.tterrag.chatmux.util.ServiceType;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
+import discord4j.common.json.UserResponse;
 import discord4j.gateway.json.GatewayPayload;
 import discord4j.gateway.json.dispatch.Dispatch;
 import discord4j.gateway.json.dispatch.MessageReactionAdd;
@@ -145,7 +144,7 @@ public class DiscordCommandHandler {
                         .filter(t -> Main.cfg.getModerators() != null || Main.cfg.getAdmins() != null)
                         .doOnNext(t -> discordHelper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE))
                         .map(t -> Tuples.of(t.getT2(), discord.inbound().ofType(MessageReactionAdd.class)
-                                .filter(mra -> mra.getUserId() != Main.botUser.getId())
+                                .filterWhen(mra -> Main.botUser.map(UserResponse::getId).map(id -> id != mra.getUserId()))
                                 .filter(mra -> mra.getMessageId() == t.getT2().getId())
                                 .filter(mra -> mra.getEmoji().getName().equals(ADMIN_EMOTE))
                                 .doOnNext(mra -> discordHelper.deleteMessage(mra.getChannelId(), mra.getMessageId()))
