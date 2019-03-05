@@ -1,4 +1,4 @@
-package com.tterrag.chatmux.bridge.factorio;
+package com.tterrag.chatmux.websocket;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -10,8 +10,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
 
-import com.tterrag.chatmux.websocket.FrameParser;
-import com.tterrag.chatmux.websocket.WebSocketClient;
+import com.tterrag.chatmux.bridge.factorio.FactorioMessage;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

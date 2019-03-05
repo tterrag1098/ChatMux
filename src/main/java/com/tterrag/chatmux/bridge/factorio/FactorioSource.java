@@ -2,6 +2,7 @@ package com.tterrag.chatmux.bridge.factorio;
 
 import com.tterrag.chatmux.bridge.ChatSource;
 import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.websocket.FactorioClient;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import reactor.core.publisher.Flux;

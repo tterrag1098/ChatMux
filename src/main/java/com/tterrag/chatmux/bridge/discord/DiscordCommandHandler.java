@@ -20,6 +20,7 @@ import com.tterrag.chatmux.bridge.twitch.TwitchRequestHelper;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.links.LinkManager;
 import com.tterrag.chatmux.links.LinkManager.Link;
+import com.tterrag.chatmux.util.WebhookMessage;
 import com.tterrag.chatmux.links.WebSocketFactory;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
