@@ -14,12 +14,16 @@ import reactor.util.annotation.NonNull;
 @Slf4j
 public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
     
+    @NonNull
     private final EmitterProcessor<I> receiver = EmitterProcessor.create(false);
+    @NonNull
     private final EmitterProcessor<O> sender = EmitterProcessor.create(false);
 
     // initialize the sinks to safely produce values downstream
     // we use LATEST backpressure handling to avoid overflow on no subscriber situations
+    @NonNull
     private final FluxSink<I> receiverSink = receiver.sink(FluxSink.OverflowStrategy.LATEST);
+    @NonNull
     private final FluxSink<O> senderSink = sender.sink(FluxSink.OverflowStrategy.LATEST); 
         
     public Mono<Void> connect(@NonNull String url, FrameParser<I, O> handler) {

@@ -24,6 +24,7 @@ import reactor.netty.ConnectionObserver;
 import reactor.netty.NettyPipeline;
 import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
+import reactor.util.annotation.NonNull;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -37,6 +38,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
             this.closeStatus = closeStatus;
         }
 
+        @SuppressWarnings("null")
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             if (msg instanceof CloseWebSocketFrame && ((CloseWebSocketFrame) msg).isFinalFragment()) {
@@ -47,6 +49,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
             ctx.fireChannelRead(msg);
         }
 
+        @SuppressWarnings("null")
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (evt instanceof SslCloseCompletionEvent) {
@@ -63,7 +66,9 @@ public class FrameParser<I, O> implements ConnectionObserver {
     private final Function<String, I> deserializer;
     private final Function<O, String> serializer;
 
+    @NonNull
     private final UnicastProcessor<I> inboundExchange = UnicastProcessor.create();
+    @NonNull
     private final UnicastProcessor<O> outboundExchange = UnicastProcessor.create();
     private final MonoProcessor<Void> completionNotifier = MonoProcessor.create();
 
@@ -88,7 +93,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
     }
     
     @Override
-    public void onStateChange(Connection connection, State newState) {
+    public void onStateChange(@NonNull Connection connection, @NonNull State newState) {
         log.debug("{} {}", newState, connection);
     }
 

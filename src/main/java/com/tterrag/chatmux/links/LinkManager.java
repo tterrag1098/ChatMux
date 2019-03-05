@@ -38,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
+import reactor.util.annotation.NonNull;
 import reactor.util.annotation.Nullable;
 
 public enum LinkManager {
@@ -70,16 +71,21 @@ public enum LinkManager {
     private static class LinkConverter implements Converter<Link, Link> {
 
         @Override
-        public Link convert(Link value) {
+        public Link convert(@SuppressWarnings("null") Link value) {
             Disposable sub = DiscordCommandHandler.connect(INSTANCE.discordHelper, INSTANCE.mixerHelper, INSTANCE.twitchHelper, value.getFrom(), value.getTo(), value.isRaw()).block();
+            if (sub == null) {
+                throw new IllegalArgumentException("Connecting to saved link failed");
+            }
             return new Link(value.getFrom(), value.getTo(), value.isRaw(), sub);
         }
 
+        @SuppressWarnings("null")
         @Override
         public JavaType getInputType(TypeFactory typeFactory) {
             return TypeFactory.defaultInstance().constructType(Link.class);
         }
 
+        @SuppressWarnings("null")
         @Override
         public JavaType getOutputType(TypeFactory typeFactory) {
             return TypeFactory.defaultInstance().constructType(Link.class);
@@ -103,8 +109,11 @@ public enum LinkManager {
         }
     });
     
+    @NonNull
     private final DiscordRequestHelper discordHelper = new DiscordRequestHelper(Main.cfg.getDiscord().getToken());
+    @NonNull
     private final MixerRequestHelper mixerHelper = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
+    @NonNull
     private final TwitchRequestHelper twitchHelper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
     
     public <I, O> Flux<? extends ChatMessage> connect(ChatChannel<I, O> channel) {

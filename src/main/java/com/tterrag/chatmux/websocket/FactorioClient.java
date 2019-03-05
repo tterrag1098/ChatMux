@@ -21,6 +21,7 @@ import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.annotation.NonNull;
+import reactor.util.annotation.Nullable;
 
 @RequiredArgsConstructor
 @Accessors(fluent = true)
@@ -54,22 +55,28 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
             + "(?<message>.+)$"
     );
     
+    @NonNull
     public static final String GLOBAL_TEAM = "global";
     
+    @NonNull
     private final File input, output;
 
     @Getter(onMethod = @__({@Override}))
+    @NonNull
     private final EmitterProcessor<FactorioMessage> inbound = EmitterProcessor.create(false);
+    @NonNull
     private final EmitterProcessor<String> outbound = EmitterProcessor.create(false);
     
+    @NonNull
     private final FluxSink<FactorioMessage> inboundSink = inbound.sink(FluxSink.OverflowStrategy.LATEST);
+    @NonNull
     private final FluxSink<String> outboundSink = outbound.sink(FluxSink.OverflowStrategy.LATEST); 
     
     public Mono<Void> connect() {
         Tailer tailer = new Tailer(input, new TailerListenerAdapter() {
             @Override
-            public void handle(String line) {
-                line = line.trim();
+            public void handle(@Nullable String line) {
+                line = line == null ? "" : line.trim();
                 Matcher m = CHAT_MSG.matcher(line);
                 if (m.matches()) {
                     String type = m.group("type");
@@ -90,8 +97,8 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
             }
           
             @Override
-            public void handle(Exception ex) {
-                inboundSink.next(new FactorioMessage("ERROR", GLOBAL_TEAM, ex.toString(), false));
+            public void handle(@Nullable Exception ex) {
+                inboundSink.next(new FactorioMessage("ERROR", GLOBAL_TEAM, ex == null ? "Unknown" : ex.toString(), false));
             }
             
             @Override

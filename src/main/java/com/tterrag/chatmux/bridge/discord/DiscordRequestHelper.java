@@ -30,6 +30,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.Nullable;
 
 public class DiscordRequestHelper extends RequestHelper {
     
@@ -105,11 +106,11 @@ public class DiscordRequestHelper extends RequestHelper {
         return client.getGuildService().createGuildBan(guildId, id, ImmutableMap.of("delete-message-days", daysToDelete, "reason", reason), null);
     }
     
-    public Mono<Void> addReaction(long channelId, long messageId, String id, String name) {
+    public Mono<Void> addReaction(long channelId, long messageId, @Nullable String id, String name) {
         return client.getChannelService().createReaction(channelId, messageId, (id == null ? name : id + ":" + name));
     }
 
-    public Mono<Void> removeReaction(long channelId, long userId, long messageId, String id, String name) {
+    public Mono<Void> removeReaction(long channelId, long userId, long messageId, @Nullable String id, String name) {
         return client.getChannelService().deleteReaction(channelId, messageId, (id == null ? name : id + ":" + name), userId);
     }
     

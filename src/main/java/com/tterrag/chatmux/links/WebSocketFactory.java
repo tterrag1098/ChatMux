@@ -25,6 +25,7 @@ import com.tterrag.chatmux.websocket.WebSocketClient;
 import discord4j.gateway.json.GatewayPayload;
 import discord4j.gateway.json.dispatch.Dispatch;
 import reactor.core.Disposable;
+import reactor.util.annotation.NonNull;
 
 public abstract class WebSocketFactory<I, O> {
     
@@ -50,6 +51,7 @@ public abstract class WebSocketFactory<I, O> {
     
     private static class Discord extends WebSocketFactory<Dispatch, GatewayPayload<?>> {
         
+        @NonNull
         private final DecoratedGatewayClient discord = new DecoratedGatewayClient();
 
         @Override
@@ -62,7 +64,9 @@ public abstract class WebSocketFactory<I, O> {
     }
     
     private static class Mixer extends WebSocketFactory<MixerEvent, MixerMethod> {
+        @NonNull
         private final Map<Integer, WebSocketClient<MixerEvent, MixerMethod>> mixer = new HashMap<>();
+        @NonNull
         private final Map<Integer, Disposable> connections = new HashMap<>();
 
         @Override
@@ -96,6 +100,7 @@ public abstract class WebSocketFactory<I, O> {
         
         private boolean connected;
 
+        @NonNull
         private final WebSocketClient<IRCEvent, String> twitch = new SimpleWebSocketClient<>();
 
         @Override
@@ -124,6 +129,7 @@ public abstract class WebSocketFactory<I, O> {
 
         private boolean connected;
 
+        @NonNull
         private final FactorioClient factorio = new FactorioClient(new File(Main.cfg.getFactorio().getInput()), new File(Main.cfg.getFactorio().getOutput()));
 
         @Override

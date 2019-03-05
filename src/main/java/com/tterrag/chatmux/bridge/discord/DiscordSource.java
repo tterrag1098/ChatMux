@@ -35,7 +35,7 @@ class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
                 .filter(e -> e.getMember() != null)
                 .filter(e -> e.getChannelId() == Long.parseLong(channel))
                 .filter(e -> { Boolean bot = e.getAuthor().isBot(); return bot == null || !bot; })
-                .filter(e -> e.getContent() != null && !TEMP_COMMAND_PATTERN.matcher(e.getContent()).find())
+                .filter(e -> !TEMP_COMMAND_PATTERN.matcher(e.getContent()).find())
                 .flatMap(e -> helper.getChannel(e.getChannelId()).map(c -> Tuples.of(e, c)))
                 .map(t -> new DiscordMessage(helper, t.getT2().getName(), t.getT1()));
     }

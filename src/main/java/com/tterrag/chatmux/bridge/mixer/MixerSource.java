@@ -9,11 +9,13 @@ import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
 public
 class MixerSource implements ChatSource<MixerEvent, MixerMethod> {
     
+    @NonNull
     private final MixerRequestHelper helper;
 
     @Override

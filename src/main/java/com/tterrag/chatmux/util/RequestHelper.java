@@ -33,7 +33,7 @@ public abstract class RequestHelper {
         this.client = HttpClient.create()
                                 .baseUrl(baseUrl)
                                 .headers(this::addHeaders)
-                                .wiretap();
+                                .wiretap(true);
     }
     
     protected RequestSender request(String endpoint, HttpMethod method) {

@@ -31,6 +31,7 @@ import discord4j.gateway.json.dispatch.MessageReactionAdd;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.NonNull;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
@@ -40,9 +41,11 @@ public class DiscordCommandHandler {
     
     private static final Pattern CHANNEL_MENTION = Pattern.compile("<#(\\d+)>");
     
+    @NonNull
     private final DiscordRequestHelper discordHelper;
-    
+    @NonNull
     private final MixerRequestHelper mixerHelper = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
+    @NonNull
     private final TwitchRequestHelper twitchHelper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
 
     public DiscordCommandHandler(String token) {
