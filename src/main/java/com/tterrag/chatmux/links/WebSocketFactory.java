@@ -8,6 +8,7 @@ import java.util.function.Function;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.tterrag.chatmux.Main;
+import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.factorio.FactorioClient;
 import com.tterrag.chatmux.bridge.factorio.FactorioMessage;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
@@ -16,7 +17,6 @@ import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod.MethodType;
 import com.tterrag.chatmux.bridge.mixer.response.ChatResponse;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
-import com.tterrag.chatmux.util.Service;
 import com.tterrag.chatmux.websocket.DecoratedGatewayClient;
 import com.tterrag.chatmux.websocket.FrameParser;
 import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
@@ -28,11 +28,11 @@ import reactor.core.Disposable;
 
 public abstract class WebSocketFactory<I, O> {
     
-    private static final Map<Service<?, ?>, WebSocketFactory<?, ?>> factoriesByType = ImmutableMap.<Service<?, ?>, WebSocketFactory<?, ?>>builder()
-            .put(Service.DISCORD, new Discord())
-            .put(Service.TWITCH, new Twitch())
-            .put(Service.MIXER, new Mixer())
-            .put(Service.FACTORIO, new Factorio())
+    private static final Map<ChatService<?, ?>, WebSocketFactory<?, ?>> factoriesByType = ImmutableMap.<ChatService<?, ?>, WebSocketFactory<?, ?>>builder()
+            .put(ChatService.DISCORD, new Discord())
+            .put(ChatService.TWITCH, new Twitch())
+            .put(ChatService.MIXER, new Mixer())
+            .put(ChatService.FACTORIO, new Factorio())
             .build();
     
     public abstract WebSocketClient<I, O> getSocket(String channel);
@@ -40,7 +40,7 @@ public abstract class WebSocketFactory<I, O> {
     public abstract void disposeSocket(String channel);
     
     @SuppressWarnings("unchecked")
-    public static <I, O> WebSocketFactory<I, O> get(Service<I, O> type) {
+    public static <I, O> WebSocketFactory<I, O> get(ChatService<I, O> type) {
         WebSocketFactory<I, O> ret = (WebSocketFactory<I, O>) factoriesByType.get(type);
         if (ret == null) {
             throw new IllegalArgumentException("Unknown service type");

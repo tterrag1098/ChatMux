@@ -1,4 +1,4 @@
-package com.tterrag.chatmux.util;
+package com.tterrag.chatmux.bridge;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -19,25 +19,24 @@ import com.tterrag.chatmux.bridge.discord.DiscordService;
 import com.tterrag.chatmux.bridge.factorio.FactorioService;
 import com.tterrag.chatmux.bridge.mixer.MixerService;
 import com.tterrag.chatmux.bridge.twitch.TwitchService;
-import com.tterrag.chatmux.links.ChatSource;
 
 import lombok.Getter;
 
 @JsonSerialize(using = Serializer.class)
 @JsonDeserialize(using = Deserializer.class)
-public abstract class Service<I, O> {
+public abstract class ChatService<I, O> {
     
     public static final DiscordService DISCORD = new DiscordService();
     public static final FactorioService FACTORIO = new FactorioService();
     public static final MixerService MIXER = new MixerService();
     public static final TwitchService TWITCH = new TwitchService();
 
-    private static final Map<String, Service<?, ?>> types = new HashMap<>();
+    private static final Map<String, ChatService<?, ?>> types = new HashMap<>();
     
     @Getter
     private final String name;
     
-    protected Service(String name) {
+    protected ChatService(String name) {
         this.name = name.toLowerCase(Locale.ROOT);
         types.put(this.name, this);
     }
@@ -49,36 +48,36 @@ public abstract class Service<I, O> {
         return name;
     }
 
-    public static final Service<?, ?> byName(String name) {
+    public static final ChatService<?, ?> byName(String name) {
         return types.get(name.toLowerCase(Locale.ROOT));
     }
 
-    public static class Conv implements Converter<Service<?, ?>, String> {
+    public static class Conv implements Converter<ChatService<?, ?>, String> {
 
         @Override
-        public Service<?, ?> convertToField(String value) {
+        public ChatService<?, ?> convertToField(String value) {
             return byName(value);
         }
 
         @Override
-        public String convertFromField(Service<?, ?> value) {
+        public String convertFromField(ChatService<?, ?> value) {
             return value.name;
         }
     }
 }
 
-class Serializer extends JsonSerializer<Service<?, ?>> {
+class Serializer extends JsonSerializer<ChatService<?, ?>> {
 
     @Override
-    public void serialize(Service<?, ?> value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    public void serialize(ChatService<?, ?> value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeString(value.getName());
     }
 }
 
-class Deserializer extends JsonDeserializer<Service<?, ?>> {
+class Deserializer extends JsonDeserializer<ChatService<?, ?>> {
 
     @Override
-    public Service<?, ?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-        return Service.byName(p.getValueAsString());
+    public ChatService<?, ?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        return ChatService.byName(p.getValueAsString());
     }
 }

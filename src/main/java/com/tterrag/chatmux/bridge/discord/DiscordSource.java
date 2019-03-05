@@ -2,9 +2,9 @@ package com.tterrag.chatmux.bridge.discord;
 
 import java.util.regex.Pattern;
 
-import com.tterrag.chatmux.links.ChatSource;
-import com.tterrag.chatmux.links.Message;
-import com.tterrag.chatmux.util.Service;
+import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.bridge.ChatMessage;
+import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import discord4j.gateway.json.GatewayPayload;
@@ -23,12 +23,12 @@ class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
     private final DiscordRequestHelper helper;
 
     @Override
-    public Service<Dispatch, GatewayPayload<?>> getType() {
-        return Service.DISCORD;
+    public ChatService<Dispatch, GatewayPayload<?>> getType() {
+        return ChatService.DISCORD;
     }
 
     @Override
-    public Flux<Message> connect(WebSocketClient<Dispatch, GatewayPayload<?>> client, String channel) {
+    public Flux<ChatMessage> connect(WebSocketClient<Dispatch, GatewayPayload<?>> client, String channel) {
         // Discord bots do not "join" channels so we only need to return the flux of messages
         return client.inbound()
                 .ofType(MessageCreate.class)

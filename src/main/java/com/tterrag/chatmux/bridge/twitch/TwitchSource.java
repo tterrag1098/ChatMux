@@ -2,10 +2,10 @@ package com.tterrag.chatmux.bridge.twitch;
 
 import java.util.Locale;
 
+import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.bridge.ChatMessage;
+import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
-import com.tterrag.chatmux.links.ChatSource;
-import com.tterrag.chatmux.links.Message;
-import com.tterrag.chatmux.util.Service;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import lombok.RequiredArgsConstructor;
@@ -18,12 +18,12 @@ class TwitchSource implements ChatSource<IRCEvent, String> {
     private final TwitchRequestHelper helper;
 
     @Override
-    public Service<IRCEvent, String> getType() {
-        return Service.TWITCH;
+    public ChatService<IRCEvent, String> getType() {
+        return ChatService.TWITCH;
     }
     
     @Override
-    public Flux<Message> connect(WebSocketClient<IRCEvent, String> client, String channel) {
+    public Flux<ChatMessage> connect(WebSocketClient<IRCEvent, String> client, String channel) {
         final String lcChan = channel.toLowerCase(Locale.ROOT);
         client.outbound().next("JOIN #" + lcChan);
         

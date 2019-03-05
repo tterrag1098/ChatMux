@@ -1,15 +1,15 @@
 package com.tterrag.chatmux.bridge.factorio;
 
-import com.tterrag.chatmux.links.Message;
-import com.tterrag.chatmux.util.Service;
+import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.bridge.ChatMessage;
 
 import reactor.core.publisher.Mono;
 
-public class FactorioMessage extends Message {
+public class FactorioMessage extends ChatMessage {
     boolean action;
     
     public FactorioMessage(String username, String team, String message, boolean action) {
-        super(Service.FACTORIO, team, team, username, message, null);
+        super(ChatService.FACTORIO, team, team, username, message, null);
         this.action = action;
     }
     

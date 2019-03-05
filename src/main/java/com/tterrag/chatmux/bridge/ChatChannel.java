@@ -1,19 +1,18 @@
-package com.tterrag.chatmux.links;
+package com.tterrag.chatmux.bridge;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.tterrag.chatmux.util.Service;
 
 import lombok.Value;
 
 @Value
-public class Channel<I, O> {
+public class ChatChannel<I, O> {
 
     String name;
-    Service<I, O> type;
+    ChatService<I, O> type;
     
     @JsonCreator
-    public Channel(@JsonProperty("name") String name, @JsonProperty("type") Service<I, O> type) {
+    public ChatChannel(@JsonProperty("name") String name, @JsonProperty("type") ChatService<I, O> type) {
         this.name = name;
         this.type = type;
     }

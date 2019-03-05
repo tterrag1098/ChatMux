@@ -1,10 +1,10 @@
 package com.tterrag.chatmux.bridge.factorio;
 
-import com.tterrag.chatmux.util.Service;
+import com.tterrag.chatmux.bridge.ChatService;
 
 import lombok.Getter;
 
-public class FactorioService extends Service<FactorioMessage, String> {
+public class FactorioService extends ChatService<FactorioMessage, String> {
     
     @Getter(onMethod = @__({@Override}))
     private final FactorioSource source = new FactorioSource();

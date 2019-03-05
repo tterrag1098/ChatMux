@@ -1,13 +1,13 @@
 package com.tterrag.chatmux.bridge.discord;
 
-import com.tterrag.chatmux.links.Message;
-import com.tterrag.chatmux.util.Service;
+import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.bridge.ChatMessage;
 
 import discord4j.common.json.MessageResponse;
 import discord4j.gateway.json.dispatch.MessageCreate;
 import reactor.core.publisher.Mono;
 
-public class DiscordMessage extends Message {
+public class DiscordMessage extends ChatMessage {
     
     private final DiscordRequestHelper helper;
     
@@ -25,7 +25,7 @@ public class DiscordMessage extends Message {
     }
     
     private DiscordMessage(DiscordRequestHelper helper, String channelName, String authorName, String content, Long guild, long channel, long author, long id, String avatar) {
-        super(Service.DISCORD, "#" + channelName, Long.toString(channel), authorName, content, "https://cdn.discordapp.com/avatars/" + author + "/" + avatar + ".png");
+        super(ChatService.DISCORD, "#" + channelName, Long.toString(channel), authorName, content, "https://cdn.discordapp.com/avatars/" + author + "/" + avatar + ".png");
         System.out.println(getAvatar());
         this.helper = helper;
         this.guild = guild;
