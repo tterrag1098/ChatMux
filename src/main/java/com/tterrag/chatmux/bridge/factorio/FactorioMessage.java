@@ -1,7 +1,7 @@
 package com.tterrag.chatmux.bridge.factorio;
 
 import com.tterrag.chatmux.links.Message;
-import com.tterrag.chatmux.util.ServiceType;
+import com.tterrag.chatmux.util.Service;
 
 import reactor.core.publisher.Mono;
 
@@ -9,7 +9,7 @@ public class FactorioMessage extends Message {
     boolean action;
     
     public FactorioMessage(String username, String team, String message, boolean action) {
-        super(ServiceType.FACTORIO, team, team, username, message, null);
+        super(Service.FACTORIO, team, team, username, message, null);
         this.action = action;
     }
     

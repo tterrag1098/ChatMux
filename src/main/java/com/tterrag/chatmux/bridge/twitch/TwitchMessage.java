@@ -2,7 +2,7 @@ package com.tterrag.chatmux.bridge.twitch;
 
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.links.Message;
-import com.tterrag.chatmux.util.ServiceType;
+import com.tterrag.chatmux.util.Service;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import reactor.core.publisher.Mono;
@@ -13,7 +13,7 @@ public class TwitchMessage extends Message {
     private final IRCEvent.Message message;
 
     public TwitchMessage(WebSocketClient<?, String> client, IRCEvent.Message message, String displayname, String avatar) {
-        super(ServiceType.TWITCH, message.getChannel(), displayname, message.getContent(), avatar);
+        super(Service.TWITCH, message.getChannel(), displayname, message.getContent(), avatar);
         this.client = client;
         this.message = message;
     }

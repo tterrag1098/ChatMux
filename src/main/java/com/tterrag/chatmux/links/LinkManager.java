@@ -30,7 +30,7 @@ import com.tterrag.chatmux.bridge.discord.DiscordCommandHandler;
 import com.tterrag.chatmux.bridge.discord.DiscordRequestHelper;
 import com.tterrag.chatmux.bridge.mixer.MixerRequestHelper;
 import com.tterrag.chatmux.bridge.twitch.TwitchRequestHelper;
-import com.tterrag.chatmux.util.ServiceType;
+import com.tterrag.chatmux.util.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -87,12 +87,12 @@ public enum LinkManager {
     @Value
     private static class MessageKey {
         
-        ServiceType<?, ?> type;
+        Service<?, ?> type;
         
         String id;
     }
     
-    private final Map<ServiceType<?, ?>, Multimap<String, Link>> links = new HashMap<>();
+    private final Map<Service<?, ?>, Multimap<String, Link>> links = new HashMap<>();
         
     private final LoadingCache<MessageKey, List<Message>> messageCache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).recordStats().build(new CacheLoader<MessageKey, List<Message>>() {
         @Override
@@ -106,17 +106,8 @@ public enum LinkManager {
     private final TwitchRequestHelper twitchHelper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
     
     public <I, O> Flux<? extends Message> connect(Channel<I, O> channel) {
-        ServiceType<I, O> type = channel.getType();
-        if (type == ServiceType.DISCORD) {
-            return new ChatSource.Discord(discordHelper).connect(WebSocketFactory.get(ServiceType.DISCORD).getSocket(channel.getName()), channel.getName());
-        } else if (type == ServiceType.TWITCH) {
-            return new ChatSource.Twitch(twitchHelper).connect(WebSocketFactory.get(ServiceType.TWITCH).getSocket(channel.getName()), channel.getName());
-        } else if (type == ServiceType.MIXER) {
-            return new ChatSource.Mixer(mixerHelper).connect(WebSocketFactory.get(ServiceType.MIXER).getSocket(channel.getName()), channel.getName());
-        } else if (type == ServiceType.FACTORIO) {
-            return new ChatSource.Factorio().connect(WebSocketFactory.get(ServiceType.FACTORIO).getSocket(channel.getName()), channel.getName());
-        }
-        throw new IllegalArgumentException("Unknown service type");
+        Service<I, O> type = channel.getType();
+        return type.getSource().connect(WebSocketFactory.get(type).getSocket(channel.getName()), channel.getName());
     }
     
     private void saveLinks() {
@@ -177,7 +168,7 @@ public enum LinkManager {
         }
     }
     
-    public List<Message> getLinkedMessages(ServiceType<?, ?> type, String id) {
+    public List<Message> getLinkedMessages(Service<?, ?> type, String id) {
         try {
             return messageCache.get(new MessageKey(type, id));
         } catch (ExecutionException e) {

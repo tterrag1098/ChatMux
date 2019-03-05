@@ -4,7 +4,7 @@ import com.tterrag.chatmux.bridge.mixer.event.MixerEvent;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod;
 import com.tterrag.chatmux.bridge.mixer.method.MixerMethod.MethodType;
 import com.tterrag.chatmux.links.Message;
-import com.tterrag.chatmux.util.ServiceType;
+import com.tterrag.chatmux.util.Service;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import reactor.core.publisher.Mono;
@@ -16,7 +16,7 @@ public class MixerMessage extends Message {
     private final MixerEvent.Message message;
 
     public MixerMessage(MixerRequestHelper helper, WebSocketClient<?, MixerMethod> client, MixerEvent.Message message, String avatar) {
-        super(ServiceType.MIXER, "" + message.channel, message.username, message.message.rawText(), avatar);
+        super(Service.MIXER, "" + message.channel, message.username, message.message.rawText(), avatar);
         this.helper = helper;
         this.client = client;
         this.message = message;

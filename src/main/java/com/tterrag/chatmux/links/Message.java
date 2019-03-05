@@ -1,6 +1,6 @@
 package com.tterrag.chatmux.links;
 
-import com.tterrag.chatmux.util.ServiceType;
+import com.tterrag.chatmux.util.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -13,7 +13,7 @@ import reactor.util.annotation.Nullable;
 @RequiredArgsConstructor
 public abstract class Message {
     
-    ServiceType<?, ?> source;
+    Service<?, ?> source;
     String channel;
     String channelId;
 
@@ -22,7 +22,7 @@ public abstract class Message {
     
     @Nullable String avatar;
     
-    protected Message(ServiceType<?, ?> type, String channel, String user, String content, @Nullable String avatar) {
+    protected Message(Service<?, ?> type, String channel, String user, String content, @Nullable String avatar) {
         this(type, channel, channel, user, content, avatar);
     }
     

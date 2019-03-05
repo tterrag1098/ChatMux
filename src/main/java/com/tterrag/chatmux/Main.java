@@ -5,7 +5,7 @@ import com.tterrag.chatmux.config.ConfigData;
 import com.tterrag.chatmux.config.ConfigReader;
 import com.tterrag.chatmux.links.LinkManager;
 import com.tterrag.chatmux.links.WebSocketFactory;
-import com.tterrag.chatmux.util.ServiceType;
+import com.tterrag.chatmux.util.Service;
 import com.tterrag.chatmux.websocket.DecoratedGatewayClient;
 
 import discord4j.common.json.UserResponse;
@@ -14,6 +14,7 @@ import discord4j.gateway.json.dispatch.Ready;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 public class Main {
@@ -29,12 +30,13 @@ public class Main {
         
         Hooks.onOperatorDebug();
         
-        DecoratedGatewayClient discord = (DecoratedGatewayClient) WebSocketFactory.get(ServiceType.DISCORD).getSocket(null);
+        DecoratedGatewayClient discord = (DecoratedGatewayClient) WebSocketFactory.get(Service.DISCORD).getSocket(null);
         
         final DiscordCommandHandler commands = new DiscordCommandHandler(cfg.getDiscord().getToken());
         
         botUser = discord.inbound()
                 .ofType(Ready.class)
+                .publishOn(Schedulers.elastic())
                 .doOnNext(r -> LinkManager.INSTANCE.readLinks())
                 .map(e -> e.getUser())
                 .next()
@@ -46,6 +48,6 @@ public class Main {
                 .doOnError(Throwable::printStackTrace)
                 .then();
         
-        Mono.zip(botUser, commandListener, discord.connect()).block();
+        Mono.when(botUser, commandListener, discord.connect()).block();
     }
 }

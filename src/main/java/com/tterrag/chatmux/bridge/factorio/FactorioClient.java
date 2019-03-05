@@ -102,7 +102,7 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
         }, 1000, true);
         
         return Mono.fromRunnable(tailer::run)
-          .subscribeOn(Schedulers.newSingle("Factorio chat reader", true))
+          .subscribeOn(Schedulers.newSingle("FactorioSource chat reader", true))
           .doOnCancel(() -> {
               log.info("Chat reader canceled");
               tailer.stop();

@@ -21,7 +21,7 @@ import com.tterrag.chatmux.links.LinkManager;
 import com.tterrag.chatmux.links.LinkManager.Link;
 import com.tterrag.chatmux.links.Message;
 import com.tterrag.chatmux.links.WebSocketFactory;
-import com.tterrag.chatmux.util.ServiceType;
+import com.tterrag.chatmux.util.Service;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import discord4j.common.json.UserResponse;
@@ -54,12 +54,12 @@ public class DiscordCommandHandler {
         if (data.length != 2) {
             return Mono.error(new IllegalArgumentException("Link must be in the format `service/channel`"));
         }
-        ServiceType<?, ?> type = ServiceType.byName(data[0]);
+        Service<?, ?> type = Service.byName(data[0]);
         if (type == null) {
             return Mono.error(new IllegalArgumentException("Invalid service name"));
         }
         Mono<String> ret = Mono.just(data[1]);
-        if (type == ServiceType.DISCORD) {
+        if (type == Service.DISCORD) {
             ret = ret.map(name -> {
                 try {
                     Long.parseLong(name);
@@ -73,7 +73,7 @@ public class DiscordCommandHandler {
                     }
                 }
             }).filter(s -> !s.isEmpty());
-        } else if (type == ServiceType.MIXER) {
+        } else if (type == Service.MIXER) {
             ret = ret.flatMap(name -> {
                 try {
                     Integer.parseInt(name);
@@ -90,7 +90,7 @@ public class DiscordCommandHandler {
 
         if (args.length >= 2 && (args[0].equals("+link") || args[0].equals("+linkraw"))) {            
             Mono<Channel<?, ?>> from = getChannel(args[1]);
-            Mono<Channel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new Channel<>(Long.toString(channel), ServiceType.DISCORD));
+            Mono<Channel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new Channel<>(Long.toString(channel), Service.DISCORD));
             
             Mono<Tuple2<Channel<?, ?>, Channel<?, ?>>> sources = Mono.zip(from, to);
             
@@ -102,7 +102,7 @@ public class DiscordCommandHandler {
                    .doOnError(Throwable::printStackTrace);
         } else if (args.length >= 2 && args[0].equals("-link")) {
             Mono<Channel<?, ?>> from = getChannel(args[1]);
-            Mono<Channel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new Channel<>(Long.toString(channel), ServiceType.DISCORD));
+            Mono<Channel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new Channel<>(Long.toString(channel), Service.DISCORD));
             
             Mono<Tuple2<Channel<?, ?>, Channel<?, ?>>> sources = Mono.zip(from, to);
 
@@ -136,8 +136,8 @@ public class DiscordCommandHandler {
 
         Mono<Disposable> ret;
         
-        if (to.getType() == ServiceType.DISCORD) {        
-            WebSocketClient<Dispatch, GatewayPayload<?>> discord = WebSocketFactory.get(ServiceType.DISCORD).getSocket(to.getName());
+        if (to.getType() == Service.DISCORD) {        
+            WebSocketClient<Dispatch, GatewayPayload<?>> discord = WebSocketFactory.get(Service.DISCORD).getSocket(to.getName());
             long channel = Long.parseLong(to.getName());
             Disposable sub = 
                   source.flatMap(m -> discordHelper.getWebhook(channel, "ChatMux", in).flatMap(wh -> discordHelper.executeWebhook(wh, new WebhookMessage(m.getContent(), m.getUser() + " (" + m.getSource() + "/" + m.getChannel() + ")", m.getAvatar()).toString())).map(r -> Tuples.of(m, r)))
@@ -154,14 +154,14 @@ public class DiscordCommandHandler {
                                 .switchIfEmpty(discordHelper.getOurUser().flatMap(u -> discordHelper.removeReaction(t.getT2().getChannelId(), u.getId(), t.getT2().getId(), null, ADMIN_EMOTE)).thenReturn(t.getT2())))
                         .subscribe();
             ret = discordHelper.sendMessage(channel, "Link established! " + from + " -> " + to).thenReturn(sub);
-        } else if (to.getType() == ServiceType.MIXER) {
-            WebSocketClient<MixerEvent, MixerMethod> mixer = WebSocketFactory.get(ServiceType.MIXER).getSocket(to.getName());
+        } else if (to.getType() == Service.MIXER) {
+            WebSocketClient<MixerEvent, MixerMethod> mixer = WebSocketFactory.get(Service.MIXER).getSocket(to.getName());
             ret = Mono.just(source.subscribe(m -> mixer.outbound().next(new MixerMethod(MethodType.MESSAGE, (raw ? m.getContent() : m.toString())))));
-        } else if (to.getType() == ServiceType.TWITCH) {
-            WebSocketClient<IRCEvent, String> twitch = WebSocketFactory.get(ServiceType.TWITCH).getSocket(to.getName());
+        } else if (to.getType() == Service.TWITCH) {
+            WebSocketClient<IRCEvent, String> twitch = WebSocketFactory.get(Service.TWITCH).getSocket(to.getName());
             ret = Mono.just(source.subscribe(m -> twitch.outbound().next("PRIVMSG #" + to.getName().toLowerCase(Locale.ROOT) + " :" + (raw ? m.getContent() : m))));
-        } else if (to.getType() == ServiceType.FACTORIO) {
-            WebSocketClient<FactorioMessage, String> factorio = WebSocketFactory.get(ServiceType.FACTORIO).getSocket(to.getName());
+        } else if (to.getType() == Service.FACTORIO) {
+            WebSocketClient<FactorioMessage, String> factorio = WebSocketFactory.get(Service.FACTORIO).getSocket(to.getName());
             ret = Mono.just(source.subscribe(m -> factorio.outbound().next(raw ? m.getContent() : m.toString())));
         } else {
             throw new IllegalArgumentException("Invalid target service");
