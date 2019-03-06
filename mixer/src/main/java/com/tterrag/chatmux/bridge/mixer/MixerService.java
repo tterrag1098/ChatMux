@@ -25,7 +25,7 @@ public class MixerService extends ChatService<MixerEvent, MixerMethod> {
     public static MixerService getInstance() {
         MixerService inst = instance;
         if (inst == null) {
-            throw new IllegalStateException("Factorio service not initialized");
+            throw new IllegalStateException("Mixer service not initialized");
         }
         return inst;
     }

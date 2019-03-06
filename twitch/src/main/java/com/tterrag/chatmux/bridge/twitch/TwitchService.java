@@ -24,7 +24,7 @@ public class TwitchService extends ChatService<IRCEvent, String> {
     public static TwitchService getInstance() {
         TwitchService inst = instance;
         if (inst == null) {
-            throw new IllegalStateException("Factorio service not initialized");
+            throw new IllegalStateException("Twitch service not initialized");
         }
         return inst;
     }
