@@ -26,9 +26,14 @@ class TwitchSource implements ChatSource<IRCEvent, String> {
 
     @NonNull
     private final WebSocketClient<IRCEvent, String> twitch = new SimpleWebSocketClient<>();
-
+    
     @Override
-    public Flux<IRCEvent> raw(String channel) {
+    public ChatService<IRCEvent, String> getType() {
+        return ChatService.TWITCH;
+    }
+    
+    @Override
+    public Flux<ChatMessage> connect(String channel) {
         if (!connected) {
             twitch.connect("wss://irc-ws.chat.twitch.tv:443", new FrameParser<>(IRCEvent::parse, Function.identity()))
                 .subscribe();
@@ -40,26 +45,10 @@ class TwitchSource implements ChatSource<IRCEvent, String> {
                 .next("CAP REQ :twitch.tv/commands");
             connected = true;
         }
-        return twitch.inbound();
-    }
-
-    @Override
-    public void disconnect(String channel) {
-        twitch.outbound().next("PART #" + channel);
-    }
-    
-    @Override
-    public ChatService<IRCEvent, String> getType() {
-        return ChatService.TWITCH;
-    }
-    
-    @Override
-    public Flux<ChatMessage> connect(String channel) {
         final String lcChan = channel.toLowerCase(Locale.ROOT);
-        Flux<IRCEvent> raw = raw(channel); // Make sure to connect websocket first
         twitch.outbound().next("JOIN #" + lcChan);
         
-        return raw.ofType(IRCEvent.Message.class)
+        return twitch.inbound().ofType(IRCEvent.Message.class)
             .filter(e -> e.getChannel().equals(lcChan))
             .flatMap(e -> helper.getUsers(e.getUser())
                                 .flatMapMany(Flux::fromArray)
@@ -72,5 +61,10 @@ class TwitchSource implements ChatSource<IRCEvent, String> {
         return Mono.just(twitch.outbound())
                 .doOnNext(sink -> sink.next("PRIVMSG #" + channel.toLowerCase(Locale.ROOT) + " :" + (raw ? message.getContent() : message)))
                 .then();
+    }
+
+    @Override
+    public void disconnect(String channel) {
+        twitch.outbound().next("PART #" + channel);
     }
 }

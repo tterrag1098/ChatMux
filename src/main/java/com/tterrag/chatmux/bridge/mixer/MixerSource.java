@@ -41,15 +41,10 @@ class MixerSource implements ChatSource<MixerEvent, MixerMethod> {
     
     @Override
     public Flux<ChatMessage> connect(String channel) {
-        return raw(channel)
+        return getClient(channel).inbound()
             .ofType(MixerEvent.Message.class)
             .flatMap(e -> helper.getUser(e.userId)
                                 .map(u -> new MixerMessage(helper, getClient(channel), e, u.avatarUrl)));
-    }
-    
-    @Override
-    public Flux<MixerEvent> raw(String channel) {
-        return getClient(channel).inbound();
     }
     
     @Override

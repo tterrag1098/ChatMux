@@ -10,8 +10,6 @@ public interface ChatSource<I, O> {
     public Flux<? extends ChatMessage> connect(String channel);
     
     public Mono<Void> send(String channel, ChatMessage payload, boolean raw);
-    
-    public Flux<I> raw(String channel);
-        
+            
     public void disconnect(String channel);
 }

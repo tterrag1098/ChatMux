@@ -53,11 +53,6 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
     }
     
     @Override
-    public Flux<Dispatch> raw(String channel) {
-        return ws.inbound();
-    }
-    
-    @Override
     public Mono<Void> send(String channelName, ChatMessage m, boolean raw) {
         InputStream in = Main.class.getResourceAsStream("/logo.png");
         if (in == null) {

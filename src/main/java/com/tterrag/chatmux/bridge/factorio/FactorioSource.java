@@ -26,11 +26,6 @@ public class FactorioSource implements ChatSource<FactorioMessage, String> {
     
     @Override
     public Flux<FactorioMessage> connect(String channel) {
-        return raw(channel);
-    }
-
-    @Override
-    public Flux<FactorioMessage> raw(String channel) {
         if (!connected) {
             factorio.connect().subscribe();
             connected = true;
