@@ -19,6 +19,7 @@ import com.tterrag.chatmux.bridge.discord.DiscordService;
 import com.tterrag.chatmux.bridge.factorio.FactorioService;
 import com.tterrag.chatmux.bridge.mixer.MixerService;
 import com.tterrag.chatmux.bridge.twitch.TwitchService;
+import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import lombok.Getter;
 import reactor.util.annotation.NonNull;
@@ -27,6 +28,8 @@ import reactor.util.annotation.Nullable;
 @JsonSerialize(using = Serializer.class)
 @JsonDeserialize(using = Deserializer.class)
 public abstract class ChatService<I, O> {
+
+    private static final Map<String, ChatService<?, ?>> types = new HashMap<>();
     
     @NonNull
     public static final DiscordService DISCORD = new DiscordService();
@@ -36,8 +39,6 @@ public abstract class ChatService<I, O> {
     public static final MixerService MIXER = new MixerService();
     @NonNull
     public static final TwitchService TWITCH = new TwitchService();
-
-    private static final Map<String, ChatService<?, ?>> types = new HashMap<>();
     
     @Getter
     @NonNull

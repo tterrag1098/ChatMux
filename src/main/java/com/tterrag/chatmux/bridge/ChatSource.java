@@ -1,12 +1,17 @@
 package com.tterrag.chatmux.bridge;
 
-import com.tterrag.chatmux.websocket.WebSocketClient;
-
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public interface ChatSource<I, O> {
     
     public ChatService<I, O> getType();
     
-    public Flux<? extends ChatMessage> connect(WebSocketClient<I, O> client, String channel);
+    public Flux<? extends ChatMessage> connect(String channel);
+    
+    public Mono<Void> send(String channel, ChatMessage payload, boolean raw);
+    
+    public Flux<I> raw(String channel);
+        
+    public void disconnect(String channel);
 }

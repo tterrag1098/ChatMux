@@ -116,11 +116,6 @@ public enum LinkManager {
     @NonNull
     private final TwitchRequestHelper twitchHelper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
     
-    public <I, O> Flux<? extends ChatMessage> connect(ChatChannel<I, O> channel) {
-        ChatService<I, O> type = channel.getType();
-        return type.getSource().connect(WebSocketFactory.get(type).getSocket(channel.getName()), channel.getName());
-    }
-    
     private void saveLinks() {
         List<Link> allLinks = getLinks();
         try {
@@ -161,7 +156,7 @@ public enum LinkManager {
         toRemove.forEach(l -> l.getSubscriber().dispose());
         channelLinks.removeAll(toRemove);
         if (channelLinks.isEmpty()) {
-            WebSocketFactory.get(from.getType()).disposeSocket(from.getName());
+            from.getType().getSource().disconnect(from.getName());
         }
         saveLinks();
         return true;

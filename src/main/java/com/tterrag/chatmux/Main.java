@@ -5,7 +5,6 @@ import com.tterrag.chatmux.bridge.discord.DiscordCommandHandler;
 import com.tterrag.chatmux.config.ConfigData;
 import com.tterrag.chatmux.config.ConfigReader;
 import com.tterrag.chatmux.links.LinkManager;
-import com.tterrag.chatmux.links.WebSocketFactory;
 import com.tterrag.chatmux.websocket.DecoratedGatewayClient;
 
 import discord4j.common.json.UserResponse;
@@ -30,7 +29,7 @@ public class Main {
         
         Hooks.onOperatorDebug();
         
-        DecoratedGatewayClient discord = (DecoratedGatewayClient) WebSocketFactory.get(ChatService.DISCORD).getSocket(null);
+        DecoratedGatewayClient discord = ChatService.DISCORD.getSource().getClient();
         
         final DiscordCommandHandler commands = new DiscordCommandHandler(cfg.getDiscord().getToken());
         

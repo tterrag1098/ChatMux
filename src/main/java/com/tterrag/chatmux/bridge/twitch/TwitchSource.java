@@ -1,38 +1,76 @@
 package com.tterrag.chatmux.bridge.twitch;
 
 import java.util.Locale;
+import java.util.function.Function;
 
 import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatMessage;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.twitch.irc.IRCEvent;
+import com.tterrag.chatmux.websocket.FrameParser;
+import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
 public
 class TwitchSource implements ChatSource<IRCEvent, String> {
     
     private final TwitchRequestHelper helper;
+    private boolean connected;
 
+    @NonNull
+    private final WebSocketClient<IRCEvent, String> twitch = new SimpleWebSocketClient<>();
+
+    @Override
+    public Flux<IRCEvent> raw(String channel) {
+        if (!connected) {
+            twitch.connect("wss://irc-ws.chat.twitch.tv:443", new FrameParser<>(IRCEvent::parse, Function.identity()))
+                .subscribe();
+            
+            twitch.outbound()
+                .next("PASS oauth:" + Main.cfg.getTwitch().getToken())
+                .next("NICK " + Main.cfg.getTwitch().getNick())
+                .next("CAP REQ :twitch.tv/tags")
+                .next("CAP REQ :twitch.tv/commands");
+            connected = true;
+        }
+        return twitch.inbound();
+    }
+
+    @Override
+    public void disconnect(String channel) {
+        twitch.outbound().next("PART #" + channel);
+    }
+    
     @Override
     public ChatService<IRCEvent, String> getType() {
         return ChatService.TWITCH;
     }
     
     @Override
-    public Flux<ChatMessage> connect(WebSocketClient<IRCEvent, String> client, String channel) {
+    public Flux<ChatMessage> connect(String channel) {
         final String lcChan = channel.toLowerCase(Locale.ROOT);
-        client.outbound().next("JOIN #" + lcChan);
+        Flux<IRCEvent> raw = raw(channel); // Make sure to connect websocket first
+        twitch.outbound().next("JOIN #" + lcChan);
         
-        return client.inbound()
-            .ofType(IRCEvent.Message.class)
+        return raw.ofType(IRCEvent.Message.class)
             .filter(e -> e.getChannel().equals(lcChan))
             .flatMap(e -> helper.getUsers(e.getUser())
                                 .flatMapMany(Flux::fromArray)
                                 .next()
-                                .map(u -> new TwitchMessage(client, e, u.displayName, u.avatarUrl)));
+                                .map(u -> new TwitchMessage(twitch, e, u.displayName, u.avatarUrl)));
+    }
+    
+    @Override
+    public Mono<Void> send(String channel, ChatMessage message, boolean raw) {
+        return Mono.just(twitch.outbound())
+                .doOnNext(sink -> sink.next("PRIVMSG #" + channel.toLowerCase(Locale.ROOT) + " :" + (raw ? message.getContent() : message)))
+                .then();
     }
 }
