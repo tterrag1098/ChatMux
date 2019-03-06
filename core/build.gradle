@@ -1,17 +1,19 @@
 plugins {
-	id 'java-library'
+    id 'java-library'
 }
 
 dependencies {
-	api 'com.discord4j.discord4j:discord4j-gateway:3.0.0'
-	api 'com.discord4j.discord4j:discord4j-rest:3.0.0'
-	api 'com.google.guava:guava:17.0'
-	api 'commons-io:commons-io:2.6'
-    api 'com.github.TheElectronWill.Night-Config:toml:3.4.2'
-	api 'org.projectlombok:lombok:1.18.2'
-    api 'com.austinv11.servicer:Servicer:1.0.0'
+    api libs.d4jGateway
+    api libs.d4jRest
+    api libs.slf4j
+    api libs.guava
+    api libs.commonsIO
+    api libs.nightConfig
+    api libs.lombok
+    api libs.servicer
     
-	implementation 'ch.qos.logback:logback-classic:1.2.1'
-	
-	annotationProcessor 'com.austinv11.servicer:Servicer:1.0.0'
+    implementation libs.logback
+    
+    annotationProcessor libs.servicer
+    annotationProcessor libs.lombok
 }

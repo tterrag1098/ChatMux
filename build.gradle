@@ -15,62 +15,141 @@ buildscript {
 plugins {
   id 'java'
   id 'maven-publish'
-  id 'com.github.johnrengelman.shadow' version '1.2.4'
+  id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
+
+apply from: "dependencies.gradle"
 
 import org.ajoberstar.grgit.Grgit
 
 allprojects {
-	apply plugin: 'java'
-	apply plugin: 'maven-publish'
-	apply plugin: 'com.github.johnrengelman.shadow'
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.github.johnrengelman.shadow'
 
-	archivesBaseName = "ChatMux"
-	group = 'com.tterrag.chatmux'
-	description = "Chat multiplexer for twitch, mixer, and discord."
-	sourceCompatibility = 1.8
-	targetCompatibility = 1.8
+    archivesBaseName = "ChatMux"
+    group = 'com.tterrag.chatmux'
+    description = "Chat multiplexer for twitch, mixer, and discord."
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
-	if (System.getenv('BUILD_NUMBER') != null) {
-		version += ".${System.getenv('BUILD_NUMBER')}"
-	} else if (new File(projectDir, '.git').exists()) {
-		def repo = Grgit.open(project.file('.'))
-		version += ".${repo.log().find().abbreviatedId}"
-	} else {
-		version += ".CUSTOM"
-	}
-		
-	repositories {
-		mavenLocal()
-		mavenCentral()
-		jcenter() 
-		maven { url 'https://jitpack.io' }
-		maven { url 'https://repo.spring.io/milestone' }
-	}
-
-	tasks.withType(JavaCompile) {
-		options.encoding = 'UTF-8'
-	}
-
-	shadowJar {
-		mergeServiceFiles()
-		dependencies {
-			exclude "*.html"
-			exclude dependency('org.projectlombok:lombok')
-		}
-	}
-	
-	task sourcesJar(type: Jar) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
+    if (System.getenv('BUILD_NUMBER') != null) {
+        version += ".${System.getenv('BUILD_NUMBER')}"
+    } else if (new File(projectDir, '.git').exists()) {
+        def repo = Grgit.open(project.file('.'))
+        version += ".${repo.log().find().abbreviatedId}"
+    } else {
+        version += ".CUSTOM"
+    }
+        
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter() 
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://repo.spring.io/milestone' }
     }
 
-    artifacts {
-        archives sourcesJar
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
     }
 }
 
 subprojects {
+    archivesBaseName = "ChatMux-$project.name"
+        
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+    
+    artifacts {
+        archives sourcesJar
+    }
 
-	archivesBaseName = "ChatMux-$project.name"
+    build.dependsOn sourcesJar
+    
+    // Not necessary for anything but core, atm. Find a way to exclude transitive deps?
+    shadowJar.enabled = false
 }
+
+project(':core') {
+    shadowJar {
+        mergeServiceFiles()
+        dependencies {
+            exclude dependency('org.projectlombok:lombok')
+        }
+        enabled = true
+    }
+    
+    build.dependsOn shadowJar
+}
+
+subprojects.each { subproject -> evaluationDependsOn( subproject.path ) }
+
+def mergeServiceFiles() {
+    def serviceMap = [:].withDefault{ k -> new StringBuilder() }
+    
+    subprojects.each { subproject ->
+        new File(subproject.sourceSets.main.output.classesDirs.getSingleFile(), 'META-INF/services').listFiles().each { file ->
+            serviceMap[file.getName()].append(file.text)
+        }
+    }
+    
+    serviceMap.each { k, v -> 
+        File output = new File(project.sourceSets.main.output.classesDirs.getSingleFile(), 'META-INF/services/' + k)
+        output.getParentFile().mkdirs()
+        output << v
+    }
+}
+
+// Collect all sources from the modules and merge them into the "main" jar.
+jar.dependsOn subprojects.tasks['classes']
+jar {
+    doFirst { mergeServiceFiles() }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    subprojects.each { subproject ->
+        from subproject.sourceSets.main.output.classesDirs
+        from subproject.sourceSets.main.output.resourcesDir
+    }
+    manifest {
+        attributes 'Main-Class': 'com.tterrag.chatmux.Main'
+    }
+}
+
+// Shadow doesn't help here, so do it all manually
+// Copy contents of all dependencies of all subprojects into a -all jar, excluding some unnecessary things (and ourselves).
+task allJar(type: Jar, dependsOn: subprojects.tasks['classes']) {
+    doFirst { mergeServiceFiles() }
+    classifier = 'all'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from project.sourceSets.main.output
+    subprojects.each { subproject -> 
+        from subproject.sourceSets.main.output.classesDirs
+        from subproject.sourceSets.main.output.resourcesDir
+        dependsOn subproject.configurations.runtimeClasspath
+        // Including our own jars overwrites the merged service file, and skip lombok
+        from { subproject.configurations.runtimeClasspath.findAll { it.name.endsWith('jar') && !it.name.startsWith('ChatMux') && !it.name.contains('lombok') }.collect { zipTree(it) }}
+    }
+    // Useless metadata
+    exclude 'META-INF/maven/**'
+    manifest {
+        attributes 'Main-Class': 'com.tterrag.chatmux.Main'
+    }
+}
+
+task mergedSourcesJar(type: Jar) {
+    classifier = 'sources'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    subprojects.each { subproject ->
+        from subproject.sourceSets.main.allSource
+    }
+}
+
+// Copy all the subproject jars to build/libs
+task copyJars(type: Copy, dependsOn: subprojects.tasks['build']) {
+    from subprojects.collect { it.tasks.withType(Jar) }
+    into "$buildDir/libs"
+}
+
+project.build.dependsOn allJar, mergedSourcesJar, copyJars

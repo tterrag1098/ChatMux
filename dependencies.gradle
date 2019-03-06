@@ -1,0 +1,32 @@
+ext {
+    versions = [
+        d4j : '3.0.0',
+        
+        // Logging 
+        slf4j   : '1.7.26',
+        logback : '1.2.3',
+        
+        // Configuration
+        nightConfig : '3.4.2',
+        
+        // Utilities
+        guava      : '17.0',
+        commonsIO : '2.6',
+        lombok     : '1.18.6',
+        servicer   : '1.0.0'
+    ]
+    libs = [
+        d4jGateway : "com.discord4j.discord4j:discord4j-gateway:$versions.d4j",
+        d4jRest    : "com.discord4j.discord4j:discord4j-rest:$versions.d4j",
+        
+        slf4j   : "org.slf4j:slf4j-api:$versions.slf4j",
+        logback : "ch.qos.logback:logback-classic:$versions.logback",
+        
+        nightConfig : "com.github.TheElectronWill.Night-Config:toml:$versions.nightConfig",
+        
+        guava      : "com.google.guava:guava:$versions.guava",
+        commonsIO  : "commons-io:commons-io:$versions.commonsIO",
+        lombok     : "org.projectlombok:lombok:$versions.lombok",
+        servicer   : "com.austinv11.servicer:Servicer:$versions.servicer",
+    ]
+}
