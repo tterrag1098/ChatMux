@@ -1,9 +1,11 @@
 package com.tterrag.chatmux.factorio;
 
+import com.austinv11.servicer.WireService;
 import com.tterrag.chatmux.bridge.ChatService;
 
 import lombok.Getter;
 
+@WireService(ChatService.class)
 public class FactorioService extends ChatService<FactorioMessage, String> {
     
     @Getter(onMethod = @__({@Override}))

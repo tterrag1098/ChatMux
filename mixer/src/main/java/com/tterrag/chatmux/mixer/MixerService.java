@@ -1,5 +1,6 @@
 package com.tterrag.chatmux.mixer;
 
+import com.austinv11.servicer.WireService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatService;
@@ -8,6 +9,7 @@ import com.tterrag.chatmux.mixer.method.MixerMethod;
 
 import lombok.Getter;
 
+@WireService(ChatService.class)
 public class MixerService extends ChatService<MixerEvent, MixerMethod> {
     
     private final MixerRequestHelper helper = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());

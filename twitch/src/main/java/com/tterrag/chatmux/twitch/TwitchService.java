@@ -1,5 +1,6 @@
 package com.tterrag.chatmux.twitch;
 
+import com.austinv11.servicer.WireService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatService;
@@ -7,6 +8,7 @@ import com.tterrag.chatmux.twitch.irc.IRCEvent;
 
 import lombok.Getter;
 
+@WireService(ChatService.class)
 public class TwitchService extends ChatService<IRCEvent, String> {
     
     private final TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
