@@ -40,6 +40,16 @@ class MixerSource implements ChatSource<MixerEvent, MixerMethod> {
     }
     
     @Override
+    public Mono<String> parseChannel(String channel) {
+        try {
+            Integer.parseInt(channel);
+            return Mono.just(channel);
+        } catch (NumberFormatException e) {
+            return helper.getChannel(channel).map(c -> c.id).map(c -> Integer.toString(c));
+        }
+    }
+    
+    @Override
     public Flux<ChatMessage> connect(String channel) {
         return getClient(channel).inbound()
             .ofType(MixerEvent.Message.class)

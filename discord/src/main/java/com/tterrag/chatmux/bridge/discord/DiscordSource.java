@@ -2,6 +2,7 @@ package com.tterrag.chatmux.bridge.discord;
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.tterrag.chatmux.Main;
@@ -28,6 +29,8 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
     
     private static final String ADMIN_EMOTE = "\u274C";
     private static final Pattern TEMP_COMMAND_PATTERN = Pattern.compile("^\\s*(\\+link(raw)?|^-link|^~links)");
+    private static final Pattern CHANNEL_MENTION = Pattern.compile("<#(\\d+)>");
+
     
     private final DiscordRequestHelper helper;
     
@@ -36,7 +39,17 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
 
     @Override
     public ChatService<Dispatch, GatewayPayload<?>> getType() {
-        return ChatService.DISCORD;
+        return DiscordService.getInstance();
+    }
+    
+    @Override
+    public Mono<String> parseChannel(String channel) {
+        return Mono.fromSupplier(() -> Long.parseLong(channel))
+                .thenReturn(channel)
+                .onErrorResume(NumberFormatException.class, t -> Mono.just(CHANNEL_MENTION.matcher(channel))
+                        .filter(Matcher::matches)
+                        .map(m -> m.group(1))
+                        .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("ChatChannel must be a mention or ID"))));
     }
 
     @Override

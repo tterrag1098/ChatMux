@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.Getter;
+import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 import reactor.util.annotation.Nullable;
 
@@ -38,6 +39,10 @@ public abstract class ChatService<I, O> {
     }
     
     public abstract ChatSource<I, O> getSource();
+    
+    public Mono<Void> runInterface() {
+        throw new UnsupportedOperationException("This service cannot be used as main");
+    }
     
     @Override
     public String toString() {
