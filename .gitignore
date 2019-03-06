@@ -1,8 +1,8 @@
 *.class
-/data/
-/.gradle/
-/build/
-/logs/
+data/
+.gradle/
+build/
+logs/
 chatmux.toml
 links.json
 
