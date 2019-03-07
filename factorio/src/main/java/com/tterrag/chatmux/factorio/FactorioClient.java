@@ -10,9 +10,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
 
-import com.tterrag.chatmux.websocket.FrameParser;
-import com.tterrag.chatmux.websocket.WebSocketClient;
-
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
@@ -27,7 +24,7 @@ import reactor.util.annotation.Nullable;
 @RequiredArgsConstructor
 @Accessors(fluent = true)
 @Slf4j
-public class FactorioClient implements WebSocketClient<FactorioMessage, String> {
+public class FactorioClient {
     
     private static final String TIMESTAMP_REGEX = "(?<date>\\d{4}-\\d{2}-\\d{2})\\s(?<time>\\d{2}:\\d{2}:\\d{2})";
     
@@ -62,7 +59,7 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
     @NonNull
     private final File input, output;
 
-    @Getter(onMethod = @__({@Override}))
+    @Getter
     @NonNull
     private final EmitterProcessor<FactorioMessage> inbound = EmitterProcessor.create(false);
     @NonNull
@@ -109,7 +106,7 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
         }, 1000, true);
         
         return Mono.fromRunnable(tailer::run)
-          .subscribeOn(Schedulers.newSingle("FactorioSource chat reader", true))
+          .subscribeOn(Schedulers.newSingle("Factorio chat reader", true))
           .doOnCancel(() -> {
               log.info("Chat reader canceled");
               tailer.stop();
@@ -125,14 +122,7 @@ public class FactorioClient implements WebSocketClient<FactorioMessage, String> 
           .then();
     }
 
-    @Override
     public FluxSink<String> outbound() {
         return outboundSink;
-    }
-
-    @Override
-    @Deprecated
-    public Mono<Void> connect(@NonNull String string, FrameParser<FactorioMessage, String> frameParser) {
-        return Mono.empty();
     }
 }
