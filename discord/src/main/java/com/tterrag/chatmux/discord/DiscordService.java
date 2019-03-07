@@ -4,6 +4,7 @@ import org.pf4j.Extension;
 
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.bridge.ChatSource;
 import com.tterrag.chatmux.links.LinkManager;
 import com.tterrag.chatmux.websocket.DecoratedGatewayClient;
 
@@ -18,11 +19,6 @@ import reactor.core.scheduler.Schedulers;
 
 @Extension
 public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
-    
-    private final DiscordRequestHelper helper = new DiscordRequestHelper(Main.cfg.getDiscord().getToken());
-    
-    @Getter(onMethod = @__({@Override}))
-    private final DiscordSource source = new DiscordSource(helper);
     
     @Getter
     public static Mono<UserResponse> botUser = Mono.empty();
@@ -43,8 +39,14 @@ public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
     }
     
     @Override
+    protected ChatSource<Dispatch, GatewayPayload<?>> createSource() {
+        DiscordRequestHelper helper = new DiscordRequestHelper(Main.cfg.getDiscord().getToken());
+        return new DiscordSource(helper);
+    }
+    
+    @Override
     public Mono<Void> runInterface() {
-        DecoratedGatewayClient discord = getSource().getClient();
+        DecoratedGatewayClient discord = ((DiscordSource)getSource()).getClient();
         
         final DiscordCommandHandler commands = new DiscordCommandHandler(Main.cfg.getDiscord().getToken());
         

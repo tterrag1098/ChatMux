@@ -3,18 +3,19 @@ package com.tterrag.chatmux.factorio;
 import org.pf4j.Extension;
 
 import com.tterrag.chatmux.bridge.ChatService;
-
-import lombok.Getter;
+import com.tterrag.chatmux.bridge.ChatSource;
 
 @Extension
 public class FactorioService extends ChatService<FactorioMessage, String> {
     
-    @Getter(onMethod = @__({@Override}))
-    private final FactorioSource source = new FactorioSource();
-
     public FactorioService() {
         super("factorio");
         instance = this;
+    }
+    
+    @Override
+    protected ChatSource<FactorioMessage, String> createSource() {
+        return new FactorioSource();
     }
     
     private static FactorioService instance;

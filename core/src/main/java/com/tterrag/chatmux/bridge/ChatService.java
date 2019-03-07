@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.sql.rowset.CachedRowSet;
+
 import org.pf4j.ExtensionPoint;
 
 import com.electronwill.nightconfig.core.conversion.Converter;
@@ -29,6 +31,8 @@ public abstract class ChatService<I, O> implements ExtensionPoint {
 
     private static final Map<String, ChatService<?, ?>> types = new HashMap<>();
     
+    private ChatSource<I, O> source;
+    
     @Getter
     @NonNull
     private final String name;
@@ -38,7 +42,19 @@ public abstract class ChatService<I, O> implements ExtensionPoint {
         types.put(this.name, this);
     }
     
-    public abstract ChatSource<I, O> getSource();
+    public void initialize() {
+        source = createSource();
+    }
+    
+    public final ChatSource<I, O> getSource() {
+        final ChatSource<I, O> source = this.source;
+        if (source == null) {
+            throw new IllegalStateException("Source not created");
+        }
+        return source;
+    }
+    
+    protected abstract ChatSource<I, O> createSource();
     
     public Mono<Void> runInterface() {
         throw new UnsupportedOperationException("This service cannot be used as main");

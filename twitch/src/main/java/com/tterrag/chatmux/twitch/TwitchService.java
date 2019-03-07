@@ -5,21 +5,21 @@ import org.pf4j.Extension;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.bridge.ChatSource;
 import com.tterrag.chatmux.twitch.irc.IRCEvent;
-
-import lombok.Getter;
 
 @Extension
 public class TwitchService extends ChatService<IRCEvent, String> {
-    
-    private final TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
-    
-    @Getter(onMethod = @__({@Override}))
-    private final TwitchSource source = new TwitchSource(helper);
 
     public TwitchService() {
         super("mixer");
         instance = this;
+    }
+    
+    @Override
+    protected ChatSource<IRCEvent, String> createSource() {
+        TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
+        return new TwitchSource(helper);
     }
     
     private static TwitchService instance;
