@@ -57,7 +57,7 @@ public abstract class ChatService<I, O> implements ExtensionPoint {
     protected abstract ChatSource<I, O> createSource();
     
     public Mono<Void> runInterface() {
-        throw new UnsupportedOperationException("This service cannot be used as main");
+        throw new UnsupportedOperationException("Service '" + name + "' cannot be used as main");
     }
     
     @Override
