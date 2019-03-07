@@ -6,8 +6,6 @@ import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import discord4j.common.close.CloseException;
-import discord4j.common.close.CloseStatus;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;

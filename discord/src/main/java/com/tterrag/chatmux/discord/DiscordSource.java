@@ -9,9 +9,9 @@ import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatMessage;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.discord.util.DecoratedGatewayClient;
+import com.tterrag.chatmux.discord.util.WebhookMessage;
 import com.tterrag.chatmux.links.LinkManager;
-import com.tterrag.chatmux.util.WebhookMessage;
-import com.tterrag.chatmux.websocket.DecoratedGatewayClient;
 
 import discord4j.common.json.UserResponse;
 import discord4j.gateway.json.GatewayPayload;

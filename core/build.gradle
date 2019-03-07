@@ -3,15 +3,16 @@ plugins {
 }
 
 dependencies {
-    api libs.d4jGateway
-    api libs.d4jRest
     api libs.slf4j
     api libs.guava
     api libs.commonsIO
     api libs.nightConfig
     api libs.lombok
     api libs.pf4j
+	api libs.reactorNetty
+    api libs.jackson
     
+    implementation libs.jacksonJ8
     implementation libs.logback
     
     annotationProcessor libs.lombok

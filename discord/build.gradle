@@ -1,4 +1,7 @@
 dependencies {
+    implementation libs.d4jGateway
+    implementation libs.d4jRest
+    
     implementation project(':core')
     
    	annotationProcessor libs.pf4j

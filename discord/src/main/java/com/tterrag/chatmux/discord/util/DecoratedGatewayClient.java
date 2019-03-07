@@ -1,4 +1,4 @@
-package com.tterrag.chatmux.websocket;
+package com.tterrag.chatmux.discord.util;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.tterrag.chatmux.Main;
+import com.tterrag.chatmux.websocket.FrameParser;
+import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import discord4j.common.SimpleBucket;
 import discord4j.common.jackson.PossibleModule;

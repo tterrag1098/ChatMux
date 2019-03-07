@@ -1,6 +1,8 @@
 ext {
     versions = [
-        d4j : '3.0.0',
+        reactorNetty : '0.8.5.RELEASE',
+        jackson      : '2.9.8',
+        d4j          : '3.0.0',
         
         // Logging 
         slf4j   : '1.7.26',
@@ -16,8 +18,11 @@ ext {
         pf4j      : '2.6.0'
     ]
     libs = [
-        d4jGateway : "com.discord4j.discord4j:discord4j-gateway:$versions.d4j",
-        d4jRest    : "com.discord4j.discord4j:discord4j-rest:$versions.d4j",
+        reactorNetty : "io.projectreactor.netty:reactor-netty:$versions.reactorNetty",
+        jackson      : "com.fasterxml.jackson.core:jackson-databind:$versions.jackson",
+        jacksonJ8    : "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$versions.jackson",
+        d4jGateway   : "com.discord4j.discord4j:discord4j-gateway:$versions.d4j",
+        d4jRest      : "com.discord4j.discord4j:discord4j-rest:$versions.d4j",
         
         slf4j   : "org.slf4j:slf4j-api:$versions.slf4j",
         logback : "ch.qos.logback:logback-classic:$versions.logback",
