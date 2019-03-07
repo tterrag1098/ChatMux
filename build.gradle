@@ -90,18 +90,6 @@ subprojects {
     }
 }
 
-project(':core') {
-    shadowJar {
-        mergeServiceFiles()
-        dependencies {
-            exclude dependency('org.projectlombok:lombok')
-        }
-        enabled = true
-    }
-    
-    build.dependsOn shadowJar
-}
-
 subprojects.each { subproject -> evaluationDependsOn( subproject.path ) }
 
 def mergeServiceFiles() {

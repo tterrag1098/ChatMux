@@ -1,8 +1,19 @@
 dependencies {
-    implementation libs.d4jGateway
-    implementation libs.d4jRest
+    def excludeUnneeded = {
+        exclude group: 'io.projectreactor.netty'
+        exclude group: 'org.reactivestreams'
+        exclude group: 'com.fasterxml.jackson.core'
+    }
+    implementation libs.d4jGateway, excludeUnneeded
+    implementation libs.d4jRest, excludeUnneeded
     
-    implementation project(':core')
+    compileOnly project(':core')
     
-   	annotationProcessor libs.pf4j
+    annotationProcessor libs.pf4j
+    annotationProcessor libs.lombok
+}
+
+shadowJar {
+    mergeServiceFiles()
+    enabled = true
 }

@@ -9,12 +9,19 @@ dependencies {
     api libs.nightConfig
     api libs.lombok
     api libs.pf4j
-	api libs.reactorNetty
+    api libs.reactorNetty
     api libs.jackson
     
-    implementation libs.jacksonJ8
     implementation libs.logback
     
     annotationProcessor libs.lombok
-	annotationProcessor libs.pf4j
+    annotationProcessor libs.pf4j
+}
+
+shadowJar {
+    mergeServiceFiles()
+    dependencies {
+        exclude dependency('org.projectlombok:lombok')
+    }
+    enabled = true
 }
