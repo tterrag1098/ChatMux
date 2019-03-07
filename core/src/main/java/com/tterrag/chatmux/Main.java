@@ -8,6 +8,8 @@ import org.pf4j.PluginManager;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.config.ConfigData;
 import com.tterrag.chatmux.config.ConfigReader;
+import com.tterrag.chatmux.config.ServiceConfig;
+import com.tterrag.chatmux.config.ServiceData;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Hooks;
@@ -29,6 +31,12 @@ public class Main {
         ConfigReader cfgReader = new ConfigReader();
         cfgReader.load();
         cfg = cfgReader.getData();
+        
+        for (ChatService<?, ?> service : services) {
+            @SuppressWarnings("unchecked") 
+            ServiceConfig<ServiceData> config = (ServiceConfig<ServiceData>) service.getConfig();
+            config.onLoad(cfgReader.get(service.getName(), config::makeDefault));
+        }
         
         Hooks.onOperatorDebug();
         

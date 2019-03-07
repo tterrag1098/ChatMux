@@ -19,14 +19,6 @@ public class ConfigData {
     @Conversion(ChatService.Conv.class)
     private ChatService<?, ?> main;
     
-    private ServiceData.Discord discord;
-    
-    private ServiceData.Factorio factorio;
-    
-    private ServiceData.Twitch twitch;
-    
-    private ServiceData.Mixer mixer;
-    
     @PreserveNotNull
     private List<PermissionEntry> admins = new ArrayList<>();
     

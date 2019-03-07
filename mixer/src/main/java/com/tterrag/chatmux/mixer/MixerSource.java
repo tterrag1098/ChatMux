@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatMessage;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.ChatSource;
@@ -68,10 +67,10 @@ class MixerSource implements ChatSource<MixerEvent, MixerMethod> {
         int chan = Integer.parseInt(channel);
         WebSocketClient<MixerEvent, MixerMethod> ws = mixer.computeIfAbsent(chan, c -> {
             final WebSocketClient<MixerEvent, MixerMethod> socket = new SimpleWebSocketClient<>();
-            MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), Main.cfg.getMixer().getClientId(), Main.cfg.getMixer().getToken());
+            MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), MixerService.getInstance().getData().getClientId(), MixerService.getInstance().getData().getToken());
             mrh.get("/chats/" + chan, ChatResponse.class)
                 .doOnNext(chat -> connections.put(chan, socket.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper())).subscribe()))
-                .subscribe(chat -> socket.outbound().next(new MixerMethod(MethodType.AUTH, chan, Main.cfg.getMixer().getUserId(), chat.authKey)));
+                .subscribe(chat -> socket.outbound().next(new MixerMethod(MethodType.AUTH, chan, MixerService.getInstance().getData().getUserId(), chat.authKey)));
             return socket;
         });
         return ws;

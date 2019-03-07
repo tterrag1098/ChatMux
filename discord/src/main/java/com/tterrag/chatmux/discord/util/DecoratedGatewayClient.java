@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.tterrag.chatmux.Main;
+import com.tterrag.chatmux.discord.DiscordService;
 import com.tterrag.chatmux.websocket.FrameParser;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
@@ -43,7 +44,7 @@ public class DecoratedGatewayClient implements WebSocketClient<Dispatch, Gateway
     public DecoratedGatewayClient() {
         try {
             // build the value of the Authorization header        
-            String token = Main.cfg.getDiscord().getToken();
+            String token = DiscordService.getInstance().getData().getToken();
             String authorization = "Bot " + token;
             
             // TODO reactify

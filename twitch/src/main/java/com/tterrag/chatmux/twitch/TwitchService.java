@@ -3,23 +3,37 @@ package com.tterrag.chatmux.twitch;
 import org.pf4j.Extension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.config.ServiceConfig;
+import com.tterrag.chatmux.config.SimpleServiceConfig;
 import com.tterrag.chatmux.twitch.irc.IRCEvent;
+
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 
 @Extension
 public class TwitchService extends ChatService<IRCEvent, String> {
 
     public TwitchService() {
-        super("mixer");
+        super("twitch");
         instance = this;
     }
     
     @Override
     protected ChatSource<IRCEvent, String> createSource() {
-        TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), Main.cfg.getTwitch().getToken());
+        TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), getData().getToken());
         return new TwitchSource(helper);
+    }
+    
+    @Getter
+    @Setter(AccessLevel.PRIVATE)
+    private TwitchData data = new TwitchData();
+    
+    @Override
+    public ServiceConfig<?> getConfig() {
+        return new SimpleServiceConfig<>(TwitchData::new, this::setData);
     }
     
     private static TwitchService instance;

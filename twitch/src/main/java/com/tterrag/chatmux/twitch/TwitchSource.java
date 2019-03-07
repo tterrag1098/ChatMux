@@ -3,11 +3,10 @@ package com.tterrag.chatmux.twitch;
 import java.util.Locale;
 import java.util.function.Function;
 
-import com.tterrag.chatmux.bridge.ChatSource;
-import com.tterrag.chatmux.twitch.irc.IRCEvent;
-import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatMessage;
 import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.websocket.FrameParser;
 import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
 import com.tterrag.chatmux.websocket.WebSocketClient;
@@ -39,8 +38,8 @@ class TwitchSource implements ChatSource<IRCEvent, String> {
                 .subscribe();
             
             twitch.outbound()
-                .next("PASS oauth:" + Main.cfg.getTwitch().getToken())
-                .next("NICK " + Main.cfg.getTwitch().getNick())
+                .next("PASS oauth:" + TwitchService.getInstance().getData().getToken())
+                .next("NICK " + TwitchService.getInstance().getData().getNick())
                 .next("CAP REQ :twitch.tv/tags")
                 .next("CAP REQ :twitch.tv/commands");
             connected = true;

@@ -2,7 +2,6 @@ package com.tterrag.chatmux.factorio;
 
 import java.io.File;
 
-import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatMessage;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.ChatSource;
@@ -16,7 +15,7 @@ public class FactorioSource implements ChatSource<FactorioMessage, String> {
     private boolean connected;
 
     @NonNull
-    private final FactorioClient factorio = new FactorioClient(new File(Main.cfg.getFactorio().getInput()), new File(Main.cfg.getFactorio().getOutput()));
+    private final FactorioClient factorio = new FactorioClient(new File(FactorioService.getInstance().getData().getInput()), new File(FactorioService.getInstance().getData().getOutput()));
     
     @Override
     public ChatService<FactorioMessage, String> getType() {

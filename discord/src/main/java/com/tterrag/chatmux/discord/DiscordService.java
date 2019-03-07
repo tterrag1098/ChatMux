@@ -2,9 +2,10 @@ package com.tterrag.chatmux.discord;
 
 import org.pf4j.Extension;
 
-import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.config.ServiceConfig;
+import com.tterrag.chatmux.config.SimpleServiceConfig;
 import com.tterrag.chatmux.discord.util.DecoratedGatewayClient;
 import com.tterrag.chatmux.links.LinkManager;
 
@@ -13,7 +14,9 @@ import discord4j.gateway.json.GatewayPayload;
 import discord4j.gateway.json.dispatch.Dispatch;
 import discord4j.gateway.json.dispatch.MessageCreate;
 import discord4j.gateway.json.dispatch.Ready;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -38,9 +41,18 @@ public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
         return inst;
     }
     
+    @Getter
+    @Setter(AccessLevel.PRIVATE)
+    private DiscordData data = new DiscordData();
+    
+    @Override
+    public ServiceConfig<?> getConfig() {
+        return new SimpleServiceConfig<>(DiscordData::new, this::setData);
+    }
+    
     @Override
     protected ChatSource<Dispatch, GatewayPayload<?>> createSource() {
-        DiscordRequestHelper helper = new DiscordRequestHelper(Main.cfg.getDiscord().getToken());
+        DiscordRequestHelper helper = new DiscordRequestHelper(data.getToken());
         return new DiscordSource(helper);
     }
     
@@ -48,7 +60,7 @@ public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
     public Mono<Void> runInterface() {
         DecoratedGatewayClient discord = ((DiscordSource)getSource()).getClient();
         
-        final DiscordCommandHandler commands = new DiscordCommandHandler(Main.cfg.getDiscord().getToken());
+        final DiscordCommandHandler commands = new DiscordCommandHandler(data.getToken());
         
         botUser = discord.inbound()
                 .ofType(Ready.class)

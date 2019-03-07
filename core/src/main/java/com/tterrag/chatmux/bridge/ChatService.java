@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.tterrag.chatmux.config.ServiceConfig;
 
 import lombok.Getter;
 import reactor.core.publisher.Mono;
@@ -55,6 +56,8 @@ public abstract class ChatService<I, O> implements ExtensionPoint {
     }
     
     protected abstract ChatSource<I, O> createSource();
+    
+    public abstract ServiceConfig<?> getConfig();
     
     public Mono<Void> runInterface() {
         throw new UnsupportedOperationException("Service '" + name + "' cannot be used as main");
