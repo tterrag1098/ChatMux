@@ -10,10 +10,10 @@ ext {
         nightConfig : '3.4.2',
         
         // Utilities
-        guava      : '17.0',
+        guava     : '17.0',
         commonsIO : '2.6',
-        lombok     : '1.18.6',
-        servicer   : '1.0.0'
+        lombok    : '1.18.6',
+        pf4j      : '2.6.0'
     ]
     libs = [
         d4jGateway : "com.discord4j.discord4j:discord4j-gateway:$versions.d4j",
@@ -27,6 +27,6 @@ ext {
         guava      : "com.google.guava:guava:$versions.guava",
         commonsIO  : "commons-io:commons-io:$versions.commonsIO",
         lombok     : "org.projectlombok:lombok:$versions.lombok",
-        servicer   : "com.austinv11.servicer:Servicer:$versions.servicer",
+        pf4j       : "org.pf4j:pf4j:$versions.pf4j",
     ]
 }

@@ -1,6 +1,7 @@
 package com.tterrag.chatmux;
 
-import java.util.ServiceLoader;
+import org.pf4j.DefaultPluginManager;
+import org.pf4j.PluginManager;
 
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.config.ConfigData;
@@ -21,7 +22,11 @@ public class Main {
         
         Hooks.onOperatorDebug();
         
-        ServiceLoader.load(ChatService.class);
+        PluginManager pluginManager = new DefaultPluginManager();
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+        
+        pluginManager.getExtensions(ChatService.class);
 
         Main.cfg.getMain().runInterface().block();
     }

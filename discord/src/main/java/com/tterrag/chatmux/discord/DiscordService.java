@@ -1,6 +1,7 @@
 package com.tterrag.chatmux.discord;
 
-import com.austinv11.servicer.WireService;
+import org.pf4j.Extension;
+
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.links.LinkManager;
@@ -15,7 +16,7 @@ import lombok.Getter;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@WireService(ChatService.class)
+@Extension
 public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
     
     private final DiscordRequestHelper helper = new DiscordRequestHelper(Main.cfg.getDiscord().getToken());

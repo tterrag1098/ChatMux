@@ -10,10 +10,10 @@ dependencies {
     api libs.commonsIO
     api libs.nightConfig
     api libs.lombok
-    api libs.servicer
+    api libs.pf4j
     
     implementation libs.logback
     
-    annotationProcessor libs.servicer
     annotationProcessor libs.lombok
+	annotationProcessor libs.pf4j
 }

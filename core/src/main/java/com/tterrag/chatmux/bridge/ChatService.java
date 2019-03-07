@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import com.austinv11.servicer.Service;
+import org.pf4j.ExtensionPoint;
+
 import com.electronwill.nightconfig.core.conversion.Converter;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -24,8 +25,7 @@ import reactor.util.annotation.Nullable;
 
 @JsonSerialize(using = Serializer.class)
 @JsonDeserialize(using = Deserializer.class)
-@Service
-public abstract class ChatService<I, O> {
+public abstract class ChatService<I, O> implements ExtensionPoint {
 
     private static final Map<String, ChatService<?, ?>> types = new HashMap<>();
     

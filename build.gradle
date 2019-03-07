@@ -71,6 +71,23 @@ subprojects {
     
     // Not necessary for anything but core, atm. Find a way to exclude transitive deps?
     shadowJar.enabled = false
+    
+    task genFactoryPath {
+        doFirst {
+            file('.factorypath').withWriter {
+                new groovy.xml.MarkupBuilder(it).'factorypath' {
+                    configurations.annotationProcessor.each { dep ->
+                        factorypathentry(
+                            kind:'EXTJAR',
+                            id:dep.absolutePath,
+                            enabled:true,
+                            runInBatchMode:false
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 project(':core') {
