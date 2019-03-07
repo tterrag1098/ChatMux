@@ -9,7 +9,6 @@ import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 public class DiscordCommandHandler {
             
@@ -44,8 +43,9 @@ public class DiscordCommandHandler {
             
             final boolean raw = args[0].equals("+linkraw");
 
-            return sources.zipWhen(t -> connect(t.getT1(), t.getT2(), raw), (t, d) -> Tuples.of(t.getT1(), t.getT2(), d))
-                   .doOnNext(t -> LinkManager.INSTANCE.addLink(t.getT1(), t.getT2(), raw, t.getT3()))
+            return sources.flatMap(t -> connect(t.getT1(), t.getT2(), raw)
+                            .doOnNext(s -> LinkManager.INSTANCE.addLink(t.getT1(), t.getT2(), raw, s))
+                            .thenReturn(t))
                    .flatMap(t -> discordHelper.sendMessage(channel, "Link established! " + t.getT1() + " -> " + t.getT2()).thenReturn(t))
                    .doOnError(IllegalArgumentException.class, e -> discordHelper.sendMessage(channel, e.getMessage()))
                    .doOnError(Throwable::printStackTrace);
