@@ -1,6 +1,7 @@
 dependencies {
     def excludeUnneeded = {
         exclude group: 'io.projectreactor.netty'
+        exclude group: 'io.projectreactor'
         exclude group: 'org.reactivestreams'
         exclude group: 'com.fasterxml.jackson.core'
     }
