@@ -65,7 +65,10 @@ public enum LinkManager {
 
         @Override
         public Link convert(@SuppressWarnings("null") Link value) {
-            Disposable sub = value.getFrom().connect().doOnNext(m -> value.getTo().getType().getSource().send(value.getTo().getName(), m, value.isRaw())).subscribe();
+            Disposable sub = value.getFrom().connect()
+                    .flatMap(m -> value.getTo().getType().getSource().send(value.getTo().getName(), m, value.isRaw()))
+                    .doOnError(Throwable::printStackTrace)
+                    .subscribe();
             if (sub == null) {
                 throw new IllegalArgumentException("Connecting to saved link failed");
             }
