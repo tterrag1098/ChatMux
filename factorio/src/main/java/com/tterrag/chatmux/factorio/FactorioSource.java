@@ -11,6 +11,9 @@ import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
 public class FactorioSource implements ChatSource<FactorioMessage, String> {
+    
+    private static final String GLOBAL_CHAT = "/silent-command game.print(\"%1$s\")";
+    private static final String TEAM_CHAT = "/silent-command game.forces[\"%2$s\"].print(\"%1$s\")";
 
     private boolean connected;
 
@@ -34,8 +37,9 @@ public class FactorioSource implements ChatSource<FactorioMessage, String> {
 
     @Override
     public Mono<Void> send(String channel, ChatMessage message, boolean raw) {
+        String content = raw ? message.getContent() : message.toString();
         return Mono.just(factorio.outbound())
-                .doOnNext(sink -> sink.next(raw ? message.getContent() : message.toString()))
+                .doOnNext(sink -> sink.next(String.format(FactorioClient.GLOBAL_TEAM.equals(channel) ? GLOBAL_CHAT : TEAM_CHAT, content, channel)))
                 .then();
     }
 
