@@ -30,8 +30,6 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
     
     private static final String ADMIN_EMOTE = "\u274C";
     private static final Pattern TEMP_COMMAND_PATTERN = Pattern.compile("^\\s*(\\+link(raw)?|^-link|^~links)");
-    private static final Pattern CHANNEL_MENTION = Pattern.compile("<#(\\d+)>");
-
     
     private final DiscordRequestHelper helper;
     
@@ -47,7 +45,7 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
     public Mono<String> parseChannel(String channel) {
         return Mono.fromSupplier(() -> Long.parseLong(channel))
                 .thenReturn(channel)
-                .onErrorResume(NumberFormatException.class, t -> Mono.just(CHANNEL_MENTION.matcher(channel))
+                .onErrorResume(NumberFormatException.class, t -> Mono.just(DiscordMessage.CHANNEL_MENTION.matcher(channel))
                         .filter(Matcher::matches)
                         .map(m -> m.group(1))
                         .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("ChatChannel must be a mention or ID"))));
@@ -63,7 +61,7 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
                 .filter(e -> { Boolean bot = e.getAuthor().isBot(); return bot == null || !bot; })
                 .filter(e -> !TEMP_COMMAND_PATTERN.matcher(e.getContent()).find())
                 .flatMap(e -> helper.getChannel(e.getChannelId()).map(c -> Tuples.of(e, c)))
-                .map(t -> new DiscordMessage(helper, t.getT2().getName(), t.getT1()));
+                .flatMap(t -> DiscordMessage.create(helper, t.getT2().getName(), t.getT1()));
     }
     
     @Override
@@ -79,8 +77,9 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
             usercheck = m.getUser() + " (" + m.getSource().getName().substring(0, 1).toUpperCase(Locale.ROOT) + "/" + m.getChannel() + ")";
         }
         final String username = usercheck;
-        return helper.getWebhook(channel, "ChatMux", in).flatMap(wh -> helper.executeWebhook(wh, new WebhookMessage(m.getContent(), username, m.getAvatar()).toString())).map(r -> Tuples.of(m, r))
-                    .flatMap(t -> helper.getChannel(channel).doOnNext(c -> LinkManager.INSTANCE.linkMessage(t.getT1(), new DiscordMessage(helper, Long.toString(channel), t.getT2(), c.getGuildId()))).thenReturn(t))
+        return helper.getWebhook(channel, "ChatMux", in)
+                    .flatMap(wh -> helper.executeWebhook(wh, new WebhookMessage(m instanceof DiscordMessage ? ((DiscordMessage)m).getRawContent() : m.getContent(), username, m.getAvatar()).toString())).map(r -> Tuples.of(m, r))
+                    .flatMap(t -> helper.getChannel(channel).flatMap(c -> DiscordMessage.create(helper, Long.toString(channel), t.getT2(), c.getGuildId()).doOnNext(msg -> LinkManager.INSTANCE.linkMessage(t.getT1(), msg))).thenReturn(t))
                     .filter(t -> !Main.cfg.getModerators().isEmpty() || !Main.cfg.getAdmins().isEmpty())
                     .flatMap(t -> helper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE).thenReturn(t))
                     .flatMap(t -> ws.inbound().ofType(MessageReactionAdd.class)
@@ -93,7 +92,7 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
                             .switchIfEmpty(helper.getOurUser().flatMap(u -> helper.removeReaction(t.getT2().getChannelId(), u.getId(), t.getT2().getId(), null, ADMIN_EMOTE)).thenReturn(t.getT2())))
                     .then();
     }
-    
+
     @Override
     public void disconnect(String channel) {}
 

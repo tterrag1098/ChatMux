@@ -14,7 +14,11 @@ import com.google.common.io.ByteStreams;
 import com.tterrag.chatmux.util.RequestHelper;
 
 import discord4j.common.jackson.PossibleModule;
+import discord4j.common.json.EmojiResponse;
+import discord4j.common.json.GuildEmojiResponse;
+import discord4j.common.json.GuildMemberResponse;
 import discord4j.common.json.MessageResponse;
+import discord4j.common.json.RoleResponse;
 import discord4j.common.json.UserResponse;
 import discord4j.rest.RestClient;
 import discord4j.rest.http.ExchangeStrategies;
@@ -22,6 +26,7 @@ import discord4j.rest.http.client.DiscordWebClient;
 import discord4j.rest.json.request.MessageCreateRequest;
 import discord4j.rest.json.request.WebhookCreateRequest;
 import discord4j.rest.json.response.ChannelResponse;
+import discord4j.rest.json.response.GuildResponse;
 import discord4j.rest.json.response.WebhookResponse;
 import discord4j.rest.request.DefaultRouter;
 import discord4j.rest.route.Routes;
@@ -86,12 +91,28 @@ public class DiscordRequestHelper extends RequestHelper {
                 }));
     }
     
+    public Mono<GuildResponse> getGuild(long guild) {
+        return client.getGuildService().getGuild(guild);
+    }
+    
     public Mono<ChannelResponse> getChannel(long channel) {
         return client.getChannelService().getChannel(channel);
     }
     
     public Mono<UserResponse> getUser(long user) {
         return client.getUserService().getUser(user);
+    }
+    
+    public Mono<GuildMemberResponse> getMember(long guild, long user) {
+        return client.getGuildService().getGuildMember(guild, user);
+    }
+    
+    public Mono<RoleResponse> getRole(long guild, long role) {
+        return client.getGuildService().getGuildRoles(guild).filter(r -> r.getId() == role).next();
+    }
+    
+    public Mono<GuildEmojiResponse> getEmote(long guild, long emote) {
+        return client.getEmojiService().getGuildEmoji(guild, emote);
     }
 
     public Mono<Void> deleteMessage(long channelId, long id) {
