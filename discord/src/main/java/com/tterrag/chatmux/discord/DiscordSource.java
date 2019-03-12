@@ -2,6 +2,7 @@ package com.tterrag.chatmux.discord;
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -73,7 +74,12 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
         }
         
         long channel = Long.parseLong(channelName);
-        return helper.getWebhook(channel, "ChatMux", in).flatMap(wh -> helper.executeWebhook(wh, new WebhookMessage(m.getContent(), m.getUser() + " (" + m.getSource() + "/" + m.getChannel() + ")", m.getAvatar()).toString())).map(r -> Tuples.of(m, r))
+        String usercheck = m.getUser() + " (" + m.getSource() + "/" + m.getChannel() + ")";
+        if (usercheck.length() > 32) {
+            usercheck = m.getUser() + " (" + m.getSource().getName().substring(0, 1).toUpperCase(Locale.ROOT) + "/" + m.getChannel() + ")";
+        }
+        final String username = usercheck;
+        return helper.getWebhook(channel, "ChatMux", in).flatMap(wh -> helper.executeWebhook(wh, new WebhookMessage(m.getContent(), username, m.getAvatar()).toString())).map(r -> Tuples.of(m, r))
                     .flatMap(t -> helper.getChannel(channel).doOnNext(c -> LinkManager.INSTANCE.linkMessage(t.getT1(), new DiscordMessage(helper, Long.toString(channel), t.getT2(), c.getGuildId()))).thenReturn(t))
                     .filter(t -> !Main.cfg.getModerators().isEmpty() || !Main.cfg.getAdmins().isEmpty())
                     .flatMap(t -> helper.addReaction(t.getT2().getChannelId(), t.getT2().getId(), null, ADMIN_EMOTE).thenReturn(t))
