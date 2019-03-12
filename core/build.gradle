@@ -18,6 +18,10 @@ dependencies {
     annotationProcessor libs.pf4j
 }
 
+jar.manifest {
+    attributes 'Main-Class': 'com.tterrag.chatmux.Main'
+}
+
 shadowJar {
     mergeServiceFiles()
     dependencies {
