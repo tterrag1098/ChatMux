@@ -63,7 +63,7 @@ public class DiscordRequestHelper extends RequestHelper {
     public Mono<Webhook> getWebhook(Snowflake channelId, String name, InputStream avatar) {
         final Mono<TextChannel> channel = client.getChannelById(channelId).ofType(TextChannel.class).cache();
         return channel.flatMapMany(c -> c.getWebhooks())
-                .filter(existing -> existing.getName().equals(name))
+                .filter(existing -> existing.getName().filter(s -> s.equals(name)).isPresent())
                 .singleOrEmpty() // If there's more than one webhook with the same name, we have big problems...
                 .switchIfEmpty(Mono.defer(() -> {
                     try (InputStream in = avatar) {
