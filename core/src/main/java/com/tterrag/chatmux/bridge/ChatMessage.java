@@ -25,7 +25,7 @@ public abstract class ChatMessage {
     protected ChatMessage(ChatService<?, ?> type, String channel, String channelId, String user, String content, @Nullable String avatar) {
         this.source = type;
         this.channel = channel;
-        this.channelId = channel;
+        this.channelId = channelId;
         this.user = user;
         this.content = content;
         this.avatar = avatar;
