@@ -81,7 +81,7 @@ public class DiscordMessage extends ChatMessage {
     private final Message message;
     
     private DiscordMessage(String rawContent, String content, Guild guild, TextChannel channel, Member author, Message msg) {
-        super(DiscordService.getInstance(), "#" + channel.getName(), channel.getId().toString(), author.getDisplayName(), content, author.getAvatarUrl());
+        super(DiscordService.getInstance(), "#" + channel.getName(), channel.getId().asString(), author.getDisplayName(), content, author.getAvatarUrl());
         System.out.println(getAvatar());
         this.rawContent = rawContent;
         this.guild = guild;
