@@ -6,6 +6,7 @@ dependencies {
         exclude group: 'com.fasterxml.jackson.core'
     }
     implementation libs.d4j, excludeUnneeded
+    implementation libs.emoji4j, excludeUnneeded
     
     compileOnly project(':core')
     

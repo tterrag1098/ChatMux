@@ -15,7 +15,8 @@ ext {
         guava     : '17.0',
         commonsIO : '2.6',
         lombok    : '1.18.6',
-        pf4j      : '2.6.0'
+        pf4j      : '2.6.0',
+        emoji4j   : '5.0'
     ]
     libs = [
         reactorNetty : "io.projectreactor.netty:reactor-netty:$versions.reactorNetty",
@@ -31,5 +32,6 @@ ext {
         commonsIO  : "commons-io:commons-io:$versions.commonsIO",
         lombok     : "org.projectlombok:lombok:$versions.lombok",
         pf4j       : "org.pf4j:pf4j:$versions.pf4j",
+        emoji4j    : "com.kcthota:emoji4j:$versions.emoji4j"
     ]
 }

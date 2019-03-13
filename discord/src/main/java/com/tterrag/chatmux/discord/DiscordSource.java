@@ -2,7 +2,16 @@ package com.tterrag.chatmux.discord;
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,6 +26,7 @@ import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
+import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
@@ -24,6 +34,7 @@ import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.object.util.Snowflake;
 import discord4j.gateway.json.GatewayPayload;
 import discord4j.gateway.json.dispatch.Dispatch;
+import emoji4j.EmojiUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
@@ -34,6 +45,10 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
     @NonNull
     private static final String ADMIN_EMOTE = "\u274C";
     private static final Pattern TEMP_COMMAND_PATTERN = Pattern.compile("^\\s*(\\+link(raw)?|^-link|^~links)");
+    
+    private static final Pattern MENTION = Pattern.compile("(?:^|[^\\\\])@(\\S+)");
+    private static final Pattern CHANNEL = Pattern.compile("#(\\S+)");
+    private static final Pattern EMOTE = Pattern.compile(":(\\S+):");
     
     @NonNull
     private final DiscordClient client;
@@ -89,7 +104,7 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
         }
         final String username = usercheck;
         return helper.getWebhook(channel, "ChatMux", in)
-                    .flatMap(wh -> helper.executeWebhook(wh, new WebhookMessage(m instanceof DiscordMessage ? ((DiscordMessage)m).getRawContent() : m.getContent(), username, m.getAvatar()).toString())).map(r -> Tuples.of(m, r))
+                    .flatMap(wh -> discordify(m).flatMap(msg -> helper.executeWebhook(wh, new WebhookMessage(msg, username, m.getAvatar()).toString()))).map(r -> Tuples.of(m, r))
                     .flatMap(t -> client.getChannelById(channel).flatMap(c -> DiscordMessage.create(client, t.getT2()).doOnNext(msg -> LinkManager.INSTANCE.linkMessage(t.getT1(), msg))).thenReturn(t))
                     .filter(t -> !Main.cfg.getModerators().isEmpty() || !Main.cfg.getAdmins().isEmpty())
                     .flatMap(t -> t.getT2().addReaction(ReactionEmoji.unicode(ADMIN_EMOTE)).thenReturn(t))
@@ -102,6 +117,69 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
                             .flatMap(mra -> mra.getMessage().flatMap(Message::delete).and(t.getT1().delete()).thenReturn(t.getT2()))
                             .switchIfEmpty(client.getSelf().flatMap(u -> t.getT2().removeReaction(ReactionEmoji.unicode(ADMIN_EMOTE), t.getT2().getAuthor().map(User::getId).get()).thenReturn(t.getT2()))))
                     .then();
+    }
+
+    private Mono<String> discordify(ChatMessage msg) {
+        if (msg instanceof DiscordMessage) {
+            return Mono.just(((DiscordMessage) msg).getRawContent());
+        }
+        return client.getChannelById(Snowflake.of(msg.getChannelId()))
+                .ofType(TextChannel.class)
+                .flatMap(c -> c.getGuild())
+                .flatMap(g -> parseMentions(msg.getContent(), g)
+                        .flatMap(s -> parseChannels(s, g))
+                        .flatMap(s -> parseEmotes(s, g)));
+    }
+    
+    private Mono<String> parseMentions(String content, Guild guild) {
+        return parse(MENTION, 1, guild::getMembers,
+                (found, m) -> found.contains(m.getDisplayName().toLowerCase(Locale.ROOT)) || found.contains(m.getUsername().toLowerCase(Locale.ROOT)),
+                (map, m) -> {
+                    map.put(m.getDisplayName().toLowerCase(Locale.ROOT), m);
+                    map.put(m.getUsername().toLowerCase(Locale.ROOT), m);
+                },
+                m -> "<@" + m.getId().asString() + ">",
+                content, guild);
+    }
+    
+    private Mono<String> parseChannels(String content, Guild guild) {
+        return parse(CHANNEL, 1, guild::getChannels,
+                (found, c) -> found.contains(c.getName().toLowerCase(Locale.ROOT)),
+                (map, c) -> map.put(c.getName().toLowerCase(Locale.ROOT), c),
+                c -> "<#" + c.getId().asString() + ">",
+                content, guild);
+    }
+    
+    private Mono<String> parseEmotes(String content, Guild guild) {
+        return parse(EMOTE, 1, guild::getEmojis,
+                (found, e) -> found.contains(e.getName().toLowerCase(Locale.ROOT)),
+                (map, e) -> map.put(e.getName().toLowerCase(Locale.ROOT), e),
+                e -> (e.isAnimated() ? "<a:" : "<:") + e.getName() + ":" + e.getId().asString() + ">",
+                content, guild)
+                .map(EmojiUtils::emojify);
+    }
+    
+    private <T> Mono<String> parse(Pattern pattern, int group, Supplier<Flux<T>> start, BiPredicate<Collection<String>, T> matches, BiConsumer<Map<String, T>, T> collector, Function<T, String> converter, String content, Guild guild) {
+        Matcher m = pattern.matcher(content);
+        Set<String> found = new HashSet<>();
+        while (m.find()) {
+            found.add(m.group(group).toLowerCase(Locale.ROOT));
+        }
+        return start.get()
+                .filter(member -> matches.test(found, member))
+                .collect(() -> new HashMap<String, T>(), collector)
+                .map(map -> {
+                   Matcher m2 = pattern.matcher(content);
+                   StringBuffer sb = new StringBuffer();
+                   while (m2.find()) {
+                       T val = map.get(m2.group(group).toLowerCase(Locale.ROOT));
+                       if (val != null) {
+                           m2.appendReplacement(sb, converter.apply(val));
+                       }
+                   }
+                   m2.appendTail(sb);
+                   return sb.toString();
+                });
     }
 
     @Override
