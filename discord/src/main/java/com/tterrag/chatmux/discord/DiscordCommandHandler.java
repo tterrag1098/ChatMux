@@ -5,19 +5,15 @@ import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.links.LinkManager;
 import com.tterrag.chatmux.links.LinkManager.Link;
 
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
+import lombok.RequiredArgsConstructor;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
-import reactor.util.annotation.NonNull;
 import reactor.util.function.Tuple2;
 
+@RequiredArgsConstructor
 public class DiscordCommandHandler {
-            
-    @NonNull
-    private final DiscordRequestHelper discordHelper;
-    
-    public DiscordCommandHandler(String token) {
-        this.discordHelper = new DiscordRequestHelper(token);
-    }
     
     private Mono<ChatChannel<?, ?>> getChannel(String input) {
         String[] data = input.split("/");
@@ -33,11 +29,11 @@ public class DiscordCommandHandler {
                 .map(name -> new ChatChannel<>(name, type));
     }
 
-    public Mono<?> handle(long channel, long author, String... args) {
+    public Mono<?> handle(TextChannel channel, User author, String... args) {
 
         if (args.length >= 2 && (args[0].equals("+link") || args[0].equals("+linkraw"))) {            
             Mono<ChatChannel<?, ?>> from = getChannel(args[1]);
-            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(Long.toString(channel), DiscordService.getInstance()));
+            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().toString(), DiscordService.getInstance()));
             
             Mono<Tuple2<ChatChannel<?, ?>, ChatChannel<?, ?>>> sources = Mono.zip(from, to);
             
@@ -46,31 +42,30 @@ public class DiscordCommandHandler {
             return sources.flatMap(t -> connect(t.getT1(), t.getT2(), raw)
                             .doOnNext(s -> LinkManager.INSTANCE.addLink(t.getT1(), t.getT2(), raw, s))
                             .thenReturn(t))
-                   .flatMap(t -> discordHelper.sendMessage(channel, "Link established! " + t.getT1() + " -> " + t.getT2()).thenReturn(t))
-                   .doOnError(IllegalArgumentException.class, e -> discordHelper.sendMessage(channel, e.getMessage()))
+                   .flatMap(t -> channel.createMessage("Link established! " + t.getT1() + " -> " + t.getT2()))
+                   .onErrorResume(IllegalArgumentException.class, e -> channel.createMessage(e.getMessage()))
                    .doOnError(Throwable::printStackTrace);
         } else if (args.length >= 2 && args[0].equals("-link")) {
             Mono<ChatChannel<?, ?>> from = getChannel(args[1]);
-            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(Long.toString(channel), DiscordService.getInstance()));
+            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().toString(), DiscordService.getInstance()));
             
             Mono<Tuple2<ChatChannel<?, ?>, ChatChannel<?, ?>>> sources = Mono.zip(from, to);
 
-            return sources.doOnError(IllegalArgumentException.class, e -> discordHelper.sendMessage(channel, e.getMessage()))
-                   .doOnError(Throwable::printStackTrace)
+            return sources.doOnError(Throwable::printStackTrace)
                    .flatMap(t -> {
                        if (LinkManager.INSTANCE.removeLink(t.getT1(), t.getT2())) {
-                           return discordHelper.sendMessage(channel, "Link broken! " + t.getT1() + " -/> " + t.getT2());
+                           return channel.createMessage("Link broken! " + t.getT1() + " -/> " + t.getT2());
                        } else {
-                           return discordHelper.sendMessage(channel, "No such link to remove");
+                           return channel.createMessage("No such link to remove");
                        }
                    })
-                   .onErrorResume(IllegalArgumentException.class, t -> discordHelper.sendMessage(channel, t.toString()));
+                   .onErrorResume(IllegalArgumentException.class, m -> channel.createMessage(m.toString()));
         } else if (args[0].equals("~links")) {
             StringBuilder msg = new StringBuilder();
             for (Link link : LinkManager.INSTANCE.getLinks()) {
                  msg.append(link).append("\n");
             }
-            return discordHelper.sendMessage(channel, msg.toString());
+            return channel.createMessage(msg.toString());
         }
         return Mono.empty();
     }

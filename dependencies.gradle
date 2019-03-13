@@ -20,8 +20,7 @@ ext {
     libs = [
         reactorNetty : "io.projectreactor.netty:reactor-netty:$versions.reactorNetty",
         jackson      : "com.fasterxml.jackson.core:jackson-databind:$versions.jackson",
-        d4jGateway   : "com.discord4j.discord4j:discord4j-gateway:$versions.d4j",
-        d4jRest      : "com.discord4j.discord4j:discord4j-rest:$versions.d4j",
+        d4j          : "com.discord4j.discord4j:discord4j-core:$versions.d4j",
         
         slf4j   : "org.slf4j:slf4j-api:$versions.slf4j",
         logback : "ch.qos.logback:logback-classic:$versions.logback",

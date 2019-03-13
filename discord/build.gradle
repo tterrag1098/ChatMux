@@ -5,8 +5,7 @@ dependencies {
         exclude group: 'org.reactivestreams'
         exclude group: 'com.fasterxml.jackson.core'
     }
-    implementation libs.d4jGateway, excludeUnneeded
-    implementation libs.d4jRest, excludeUnneeded
+    implementation libs.d4j, excludeUnneeded
     
     compileOnly project(':core')
     

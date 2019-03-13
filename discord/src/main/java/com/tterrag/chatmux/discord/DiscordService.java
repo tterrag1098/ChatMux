@@ -6,14 +6,15 @@ import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.ChatSource;
 import com.tterrag.chatmux.config.ServiceConfig;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
-import com.tterrag.chatmux.discord.util.DecoratedGatewayClient;
 import com.tterrag.chatmux.links.LinkManager;
 
-import discord4j.common.json.UserResponse;
+import discord4j.core.DiscordClient;
+import discord4j.core.event.domain.lifecycle.ReadyEvent;
+import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
 import discord4j.gateway.json.GatewayPayload;
 import discord4j.gateway.json.dispatch.Dispatch;
-import discord4j.gateway.json.dispatch.MessageCreate;
-import discord4j.gateway.json.dispatch.Ready;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +25,7 @@ import reactor.core.scheduler.Schedulers;
 public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
     
     @Getter
-    public static Mono<UserResponse> botUser = Mono.empty();
+    public static Mono<User> botUser = Mono.empty();
 
     public DiscordService() {
         super("discord");
@@ -52,30 +53,30 @@ public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
     
     @Override
     protected ChatSource<Dispatch, GatewayPayload<?>> createSource() {
-        DiscordRequestHelper helper = new DiscordRequestHelper(data.getToken());
-        return new DiscordSource(helper);
+        return new DiscordSource(getData().getToken());
     }
     
     @Override
     public Mono<Void> runInterface() {
-        DecoratedGatewayClient discord = ((DiscordSource)getSource()).getClient();
+        DiscordClient discord = ((DiscordSource)getSource()).getClient();
         
-        final DiscordCommandHandler commands = new DiscordCommandHandler(data.getToken());
+        final DiscordCommandHandler commands = new DiscordCommandHandler();
         
-        botUser = discord.inbound()
-                .ofType(Ready.class)
+        botUser = discord.getEventDispatcher()
+                .on(ReadyEvent.class)
                 .publishOn(Schedulers.elastic())
                 .doOnNext(r -> LinkManager.INSTANCE.readLinks())
-                .map(e -> e.getUser())
+                .map(e -> e.getSelf())
                 .next()
                 .cache();
         
-        Mono<Void> commandListener = discord.inbound()
-                .ofType(MessageCreate.class)
-                .flatMap(mc -> commands.handle(mc.getChannelId(), mc.getAuthor().getId(), mc.getContent().split("\\s+")))
+        Mono<Void> commandListener = discord.getEventDispatcher()
+                .on(MessageCreateEvent.class)
+                .flatMap(mc -> Mono.zip(mc.getMessage().getChannel().cast(TextChannel.class), Mono.justOrEmpty(mc.getMessage().getAuthor()))
+                        .flatMap(t -> commands.handle(t.getT1(), t.getT2(), mc.getMessage().getContent().orElse("").split("\\s+"))))
                 .doOnError(Throwable::printStackTrace)
                 .then();
         
-        return Mono.when(botUser, commandListener, discord.connect());
+        return Mono.when(botUser, commandListener, discord.login());
     }
 }

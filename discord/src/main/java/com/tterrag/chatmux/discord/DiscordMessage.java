@@ -10,11 +10,17 @@ import org.reactivestreams.Publisher;
 
 import com.tterrag.chatmux.bridge.ChatMessage;
 
-import discord4j.common.json.GuildEmojiResponse;
-import discord4j.common.json.MessageResponse;
-import discord4j.common.json.RoleResponse;
-import discord4j.gateway.json.dispatch.MessageCreate;
-import discord4j.rest.json.response.ChannelResponse;
+import discord4j.core.DiscordClient;
+import discord4j.core.object.entity.Channel;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.GuildChannel;
+import discord4j.core.object.entity.GuildEmoji;
+import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.Role;
+import discord4j.core.object.entity.TextChannel;
+import discord4j.core.object.entity.User;
+import discord4j.core.object.util.Snowflake;
 import lombok.Getter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,47 +32,31 @@ public class DiscordMessage extends ChatMessage {
     static final Pattern ROLE_MENTION = Pattern.compile("<@&(\\d+)>");
     static final Pattern EMOTE = Pattern.compile("<(a)?:(\\S+):(\\d+)>");
     
-    public static Mono<DiscordMessage> create(DiscordRequestHelper helper, String channelName, MessageCreate message) {
-        return create(helper, channelName, message.getAuthor().getUsername(), message.getContent(), message.getGuildId(), message.getChannelId(), message.getAuthor().getId(), message.getId(), message.getAuthor().getAvatar());
-    }
-
-    public static Mono<DiscordMessage> create(DiscordRequestHelper helper, String channelName, MessageResponse message, Long guildId) {
-        return create(helper, channelName, message.getAuthor().getUsername(), message.getContent(), guildId, message.getChannelId(), message.getAuthor().getId(), message.getId(), message.getAuthor().getAvatar());
-    }
-    
-    private static Mono<DiscordMessage> create(DiscordRequestHelper helper, String channelName, String authorName, String content, Long guild, long channel, long author, long id, String avatar) {
-        return stripAllMentions(helper, content, channel).map(c -> new DiscordMessage(helper, channelName, authorName, content, c, guild, channel, author, id, avatar));
+    public static Mono<DiscordMessage> create(DiscordClient client, Message message) {
+        return Mono.zip(
+                    message.getGuild(),
+                    message.getChannel().cast(TextChannel.class),
+                    message.getAuthorAsMember())
+                .flatMap(t -> stripAllMentions(client, message.getContent().get(), t.getT2())
+                        .map(m -> new DiscordMessage(message.getContent().get(), m, t.getT1(), t.getT2(), t.getT3(), message)));
     }
     
-    private static Mono<String> stripAllMentions(DiscordRequestHelper helper, String content, long channel) {
+    private static Mono<String> stripAllMentions(DiscordClient client, String content, TextChannel channel) {
         return Mono.just(content)
-                .flatMap(s -> stripMentions(CHANNEL_MENTION, 1, helper::getChannel, ChannelResponse::getId, r -> "#" + r.getName(), s, channel))
-                .flatMap(s -> stripMentions(USER_MENTION, 1, id -> helper.getChannel(channel)
-                        .flatMap(r -> Mono.justOrEmpty(r.getGuildId()))
-                        .flatMap(g -> helper.getMember(g, id)),
-                        r -> r.getUser().getId(),
-                        r -> {
-                            String name = r.getNick();
-                            if (name == null) {
-                                name = r.getUser().getUsername();
-                            }
-                            return "@" + name;
-                        }, s, channel))
-                .flatMap(s -> stripMentions(ROLE_MENTION, 1, id -> helper.getChannel(channel)
-                        .flatMap(r -> Mono.justOrEmpty(r.getGuildId()))
-                        .flatMap(g -> helper.getRole(g, id)),
-                        RoleResponse::getId, r -> "@" + r.getName(), s, channel))
-                .flatMap(s -> stripMentions(EMOTE, 3, id -> helper.getChannel(channel)
-                        .flatMap(r -> Mono.justOrEmpty(r.getGuildId()))
-                        .flatMap(g -> helper.getEmote(g, id)),
-                        GuildEmojiResponse::getId, r -> ":" + r.getName() + ":", s, channel));
+                .flatMap(s -> stripMentions(CHANNEL_MENTION, 1, client::getChannelById, Channel::getId, c -> "#" + ((GuildChannel)c).getName(), s))
+                .flatMap(s -> stripMentions(USER_MENTION, 1, id -> client.getMemberById(channel.getGuildId(), id),
+                        User::getId, r -> "@" + r.getDisplayName(), s))
+                .flatMap(s -> stripMentions(ROLE_MENTION, 1, id -> client.getRoleById(channel.getGuildId(), id),
+                        Role::getId, r -> "@" + r.getName(), s))
+                .flatMap(s -> stripMentions(EMOTE, 3, id -> client.getGuildEmojiById(channel.getGuildId(), id),
+                        GuildEmoji::getId, r -> ":" + r.getName() + ":", s));
     }
     
-    private static <T> Mono<String> stripMentions(Pattern pattern, int idGroup, Function<Long, Publisher<T>> setup, Function<T, Long> keyExtractor, Function<T, String> converter, String content, long channel) {
+    private static <T> Mono<String> stripMentions(Pattern pattern, int idGroup, Function<Snowflake, Publisher<T>> setup, Function<T, Snowflake> keyExtractor, Function<T, String> converter, String content) {
         Matcher m = pattern.matcher(content);
-        Set<Long> found = new HashSet<>();
+        Set<Snowflake> found = new HashSet<>();
         while (m.find()) {
-            found.add(Long.parseLong(m.group(idGroup)));
+            found.add(Snowflake.of(m.group(idGroup)));
         }
         return Flux.fromIterable(found)
                 .flatMap(setup)
@@ -82,47 +72,36 @@ public class DiscordMessage extends ChatMessage {
                     return sb.toString();
                 });
     }
-
-    private final DiscordRequestHelper helper;
     
     @Getter
     private final String rawContent;
-    private final Long guild;
-    private final long channel;
-    private final long author;
-    private final long id;
+    private final Guild guild;
+    private final TextChannel channel;
+    private final User author;
+    private final Message message;
     
-    private DiscordMessage(DiscordRequestHelper helper, String channelName, String authorName, String rawContent, String content, Long guild, long channel, long author, long id, String avatar) {
-        super(DiscordService.getInstance(), "#" + channelName, Long.toString(channel), authorName, content, "https://cdn.discordapp.com/avatars/" + author + "/" + avatar + ".png");
+    private DiscordMessage(String rawContent, String content, Guild guild, TextChannel channel, Member author, Message msg) {
+        super(DiscordService.getInstance(), "#" + channel.getName(), channel.getId().toString(), author.getDisplayName(), content, author.getAvatarUrl());
         System.out.println(getAvatar());
-        this.helper = helper;
         this.rawContent = rawContent;
         this.guild = guild;
         this.channel = channel;
         this.author = author;
-        this.id = id;
+        this.message = msg;
     }
 
     @Override
     public Mono<Void> delete() {
-        return helper.deleteMessage(channel, id);
+        return message.delete();
     }
 
     @Override
     public Mono<Void> kick() {
-        Long guildId = guild;
-        if (guildId != null) {
-            return helper.kick(guildId, author);
-        }
-        return Mono.empty();
+        return guild.kick(author.getId());
     }
 
     @Override
     public Mono<Void> ban() {
-        Long guildId = guild;
-        if (guildId != null) {
-            return helper.ban(guildId, author, 0, "ChatMux ban");
-        }
-        return Mono.empty();
+        return guild.ban(author.getId(), ban -> ban.setDeleteMessageDays(0));
     }
 }
