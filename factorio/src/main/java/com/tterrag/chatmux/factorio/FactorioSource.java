@@ -41,7 +41,7 @@ public class FactorioSource implements ChatSource<FactorioMessage, String> {
     public Mono<Void> send(String channel, ChatMessage message, boolean raw) {
         String content = raw ? message.getContent() : message.toString();
         return Mono.just(factorio.outbound())
-                .doOnNext(sink -> sink.next(String.format(FactorioClient.GLOBAL_TEAM.equals(channel) ? GLOBAL_CHAT : TEAM_CHAT, content, channel)))
+                .doOnNext(sink -> sink.next(String.format(FactorioClient.GLOBAL_TEAM.equals(channel) ? GLOBAL_CHAT : TEAM_CHAT, content.replaceAll("\\r?\\n", "\\\\n"), channel)))
                 .then();
     }
 
