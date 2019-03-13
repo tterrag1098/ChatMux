@@ -6,10 +6,12 @@ import com.tterrag.chatmux.bridge.ChatMessage;
 import com.tterrag.chatmux.bridge.ChatService;
 import com.tterrag.chatmux.bridge.ChatSource;
 
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
+@Slf4j
 public class FactorioSource implements ChatSource<FactorioMessage, String> {
     
     private static final String GLOBAL_CHAT = "/silent-command game.print(\"%1$s\")";
@@ -32,7 +34,7 @@ public class FactorioSource implements ChatSource<FactorioMessage, String> {
             connected = true;
         }
         return factorio.inbound()
-                .filter(m -> FactorioClient.GLOBAL_TEAM.equals(channel) || m.getChannel().equals(channel));
+                .filter(m -> FactorioClient.GLOBAL_TEAM.equals(m.getChannel()) || m.getChannel().equals(channel));
     }
 
     @Override

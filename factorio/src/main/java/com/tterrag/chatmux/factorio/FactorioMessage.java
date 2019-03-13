@@ -35,9 +35,4 @@ public class FactorioMessage extends ChatMessage {
     public Mono<Void> ban() {
         return Mono.empty();
     }
-
-    @Override
-    public String toString() {
-        return "[" + getSource() + "] <" + getUser() + "> " + getContent();
-    }
 }
