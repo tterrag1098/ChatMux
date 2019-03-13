@@ -104,7 +104,7 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
         }
         final String username = usercheck;
         return helper.getWebhook(channel, "ChatMux", in)
-                    .flatMap(wh -> discordify(m).flatMap(msg -> helper.executeWebhook(wh, new WebhookMessage(msg, username, m.getAvatar()).toString()))).map(r -> Tuples.of(m, r))
+                    .flatMap(wh -> discordify(channel, m).flatMap(msg -> helper.executeWebhook(wh, new WebhookMessage(msg, username, m.getAvatar()).toString()))).map(r -> Tuples.of(m, r))
                     .flatMap(t -> client.getChannelById(channel).flatMap(c -> DiscordMessage.create(client, t.getT2()).doOnNext(msg -> LinkManager.INSTANCE.linkMessage(t.getT1(), msg))).thenReturn(t))
                     .filter(t -> !Main.cfg.getModerators().isEmpty() || !Main.cfg.getAdmins().isEmpty())
                     .flatMap(t -> t.getT2().addReaction(ReactionEmoji.unicode(ADMIN_EMOTE)).thenReturn(t))
@@ -119,11 +119,11 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
                     .then();
     }
 
-    private Mono<String> discordify(ChatMessage msg) {
+    private Mono<String> discordify(Snowflake channel, ChatMessage msg) {
         if (msg instanceof DiscordMessage) {
             return Mono.just(((DiscordMessage) msg).getRawContent());
         }
-        return client.getChannelById(Snowflake.of(msg.getChannelId()))
+        return client.getChannelById(channel)
                 .ofType(TextChannel.class)
                 .flatMap(c -> c.getGuild())
                 .flatMap(g -> parseMentions(msg.getContent(), g)
