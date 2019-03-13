@@ -48,8 +48,7 @@ public class DiscordMessage extends ChatMessage {
                         User::getId, r -> "@" + r.getDisplayName(), s))
                 .flatMap(s -> stripMentions(ROLE_MENTION, 1, id -> client.getRoleById(channel.getGuildId(), id),
                         Role::getId, r -> "@" + r.getName(), s))
-                .flatMap(s -> stripMentions(EMOTE, 3, id -> client.getGuildEmojiById(channel.getGuildId(), id),
-                        GuildEmoji::getId, r -> ":" + r.getName() + ":", s));
+                .map(s -> EMOTE.matcher(s).replaceAll(":$2:"));
     }
     
     private static <T> Mono<String> stripMentions(Pattern pattern, int idGroup, Function<Snowflake, Publisher<T>> setup, Function<T, Snowflake> keyExtractor, Function<T, String> converter, String content) {
@@ -60,6 +59,7 @@ public class DiscordMessage extends ChatMessage {
         }
         return Flux.fromIterable(found)
                 .flatMap(setup)
+                .onErrorContinue((t, o) -> t.printStackTrace())
                 .collectMap(keyExtractor)
                 .map(map -> {
                     Matcher m2 = pattern.matcher(content);
