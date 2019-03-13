@@ -33,7 +33,7 @@ public class DiscordCommandHandler {
 
         if (args.length >= 2 && (args[0].equals("+link") || args[0].equals("+linkraw"))) {            
             Mono<ChatChannel<?, ?>> from = getChannel(args[1]);
-            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().toString(), DiscordService.getInstance()));
+            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().asString(), DiscordService.getInstance()));
             
             Mono<Tuple2<ChatChannel<?, ?>, ChatChannel<?, ?>>> sources = Mono.zip(from, to);
             
@@ -47,7 +47,7 @@ public class DiscordCommandHandler {
                    .doOnError(Throwable::printStackTrace);
         } else if (args.length >= 2 && args[0].equals("-link")) {
             Mono<ChatChannel<?, ?>> from = getChannel(args[1]);
-            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().toString(), DiscordService.getInstance()));
+            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().asString(), DiscordService.getInstance()));
             
             Mono<Tuple2<ChatChannel<?, ?>, ChatChannel<?, ?>>> sources = Mono.zip(from, to);
 
