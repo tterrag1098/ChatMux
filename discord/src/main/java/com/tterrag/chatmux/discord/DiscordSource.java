@@ -165,6 +165,9 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
         while (m.find()) {
             found.add(m.group(group).toLowerCase(Locale.ROOT));
         }
+        if (found.isEmpty()) {
+            return Mono.just(content);
+        }
         return start.get()
                 .filter(member -> matches.test(found, member))
                 .collect(() -> new HashMap<String, T>(), collector)
