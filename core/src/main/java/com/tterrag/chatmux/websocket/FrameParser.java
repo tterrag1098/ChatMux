@@ -24,6 +24,10 @@ import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
 import reactor.util.annotation.NonNull;
 
+/**
+ * Parts of this class adapted from <a href="https://github.com/Discord4J/Discord4J">Discord4J</a>, licensed under
+ * LGPLv3.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class FrameParser<I, O> implements ConnectionObserver {

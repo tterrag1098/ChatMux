@@ -10,6 +10,10 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.util.annotation.NonNull;
 
+/**
+ * Parts of this class adapted from <a href="https://github.com/Discord4J/Discord4J">Discord4J</a>, licensed under
+ * LGPLv3.
+ */
 @RequiredArgsConstructor
 @Slf4j
 public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
