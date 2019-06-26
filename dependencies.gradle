@@ -2,7 +2,7 @@ ext {
     versions = [
         reactorNetty : '0.8.8.RELEASE',
         jackson      : '2.9.8',
-        d4j          : '3.0.5',
+        d4j          : '3.0.7',
         
         // Logging 
         slf4j   : '1.7.26',
