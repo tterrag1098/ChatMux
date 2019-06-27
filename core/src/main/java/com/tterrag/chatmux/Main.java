@@ -1,5 +1,6 @@
 package com.tterrag.chatmux;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import org.pf4j.DefaultPluginManager;
@@ -14,6 +15,7 @@ import com.tterrag.chatmux.config.ServiceData;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.Nullable;
 
 @Slf4j
 public class Main {
@@ -21,11 +23,11 @@ public class Main {
     public static ConfigData cfg = new ConfigData();
     
     public static void main(String[] args) {
-    	start().block();
+    	start(null).block();
     }
     
-    public static Mono<Void> start() {
-        PluginManager pluginManager = new DefaultPluginManager();
+    public static Mono<Void> start(@Nullable Path pluginRoot) {
+        PluginManager pluginManager = new DefaultPluginManager(pluginRoot);
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
 
