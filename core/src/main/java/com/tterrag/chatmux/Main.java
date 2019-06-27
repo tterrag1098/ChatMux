@@ -13,13 +13,18 @@ import com.tterrag.chatmux.config.ServiceData;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Hooks;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 public class Main {
     
     public static ConfigData cfg = new ConfigData();
     
-    public static void main(String[] args) throws InterruptedException {        
+    public static void main(String[] args) throws InterruptedException {
+    	main().block();
+    }
+    
+    public static Mono<Void> main() throws InterruptedException {
         PluginManager pluginManager = new DefaultPluginManager();
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
@@ -42,6 +47,6 @@ public class Main {
         
         services.forEach(ChatService::initialize);
         
-        Main.cfg.getMain().runInterface().block();
+        return Main.cfg.getMain().runInterface();
     }
 }
