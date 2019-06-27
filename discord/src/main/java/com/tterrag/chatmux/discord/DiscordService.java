@@ -18,10 +18,12 @@ import discord4j.gateway.json.dispatch.Dispatch;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Extension
+@Slf4j
 public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
     
     @Getter
@@ -73,7 +75,9 @@ public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
         Mono<Void> commandListener = discord.getEventDispatcher()
                 .on(MessageCreateEvent.class)
                 .flatMap(mc -> Mono.zip(mc.getMessage().getChannel().cast(TextChannel.class), Mono.justOrEmpty(mc.getMessage().getAuthor()))
-                        .flatMap(t -> commands.handle(t.getT1(), t.getT2(), mc.getMessage().getContent().orElse("").split("\\s+"))))
+                        .flatMap(t -> commands.handle(t.getT1(), t.getT2(), mc.getMessage().getContent().orElse("").split("\\s+"))
+                        					  .doOnError(ex -> log.error("Exception handling discord commands:", ex))
+                        					  .onErrorResume($ -> Mono.empty())))
                 .doOnError(Throwable::printStackTrace)
                 .then();
         

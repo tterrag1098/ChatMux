@@ -65,7 +65,7 @@ public class DiscordCommandHandler {
             for (Link link : LinkManager.INSTANCE.getLinks()) {
                  msg.append(link).append("\n");
             }
-            return channel.createMessage(msg.toString());
+            return channel.createMessage(msg.length() == 0 ? "No links!" : msg.toString());
         }
         return Mono.empty();
     }
