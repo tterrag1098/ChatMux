@@ -22,6 +22,15 @@ apply from: "dependencies.gradle"
 
 import org.ajoberstar.grgit.Grgit
 
+if (System.getenv('BUILD_NUMBER') != null) {
+    version += ".${System.getenv('BUILD_NUMBER')}"
+} else if (new File(projectDir, '.git').exists()) {
+    def repo = Grgit.open(project.file('.'))
+    version += ".${repo.log().find().abbreviatedId}"
+} else {
+    version += ".CUSTOM"
+}
+
 allprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
@@ -32,15 +41,8 @@ allprojects {
     description = "Chat multiplexer for twitch, mixer, and discord."
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-
-    if (System.getenv('BUILD_NUMBER') != null) {
-        version += ".${System.getenv('BUILD_NUMBER')}"
-    } else if (new File(projectDir, '.git').exists()) {
-        def repo = Grgit.open(project.file('.'))
-        version += ".${repo.log().find().abbreviatedId}"
-    } else {
-        version += ".CUSTOM"
-    }
+    
+    version = rootProject.version
         
     repositories {
         mavenLocal()
@@ -53,9 +55,31 @@ allprojects {
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
     }
+    
+    publishing {
+    	repositories {
+	        if (project.hasProperty('maven2_url')) {
+	            if (project.hasProperty('maven2_user') && project.hasProperty('maven2_pass')) {
+	                maven {
+	                    url maven2_url
+	                    credentials {
+	                        username maven2_user
+	                        password maven2_pass
+	                    }
+	                }
+	            } else {
+	                maven { url maven2_url }
+	            }
+	        } else {
+	            mavenLocal()
+	        }
+	    }
+	}
 }
 
 subprojects {
+	apply plugin: 'maven-publish'
+	
     archivesBaseName = "ChatMux-$project.name"
         
     task sourcesJar(type: Jar) {
@@ -87,6 +111,18 @@ subprojects {
                 }
             }
         }
+    }
+    
+    publishing {
+    	tasks.publish.dependsOn 'build'
+    	publications {
+        	"$project.name"(MavenPublication) {
+        		artifactId archivesBaseName
+            	from components.java
+            	
+            	artifact sourcesJar
+        	}
+    	}
     }
 }
 
@@ -158,3 +194,13 @@ task copyJars(type: Copy, dependsOn: subprojects.tasks['build']) {
 }
 
 project.build.dependsOn allJar, mergedSourcesJar, copyJars
+
+publishing {
+    tasks.publish.dependsOn 'build'
+    publications {
+        mavenJava(MavenPublication) {
+            artifact allJar
+            artifact mergedSourcesJar
+        }
+    }
+}
