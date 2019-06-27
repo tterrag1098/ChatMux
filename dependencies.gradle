@@ -26,7 +26,7 @@ ext {
         slf4j   : "org.slf4j:slf4j-api:$versions.slf4j",
         logback : "ch.qos.logback:logback-classic:$versions.logback",
         
-        nightConfig : "com.github.TheElectronWill.Night-Config:toml:$versions.nightConfig",
+        nightConfig : "com.electronwill.night-config:toml:$versions.nightConfig",
         
         guava      : "com.google.guava:guava:$versions.guava",
         commonsIO  : "commons-io:commons-io:$versions.commonsIO",
