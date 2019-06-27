@@ -20,11 +20,11 @@ public class Main {
     
     public static ConfigData cfg = new ConfigData();
     
-    public static void main(String[] args) throws InterruptedException {
-    	main().block();
+    public static void main(String[] args) {
+    	start().block();
     }
     
-    public static Mono<Void> main() throws InterruptedException {
+    public static Mono<Void> start() {
         PluginManager pluginManager = new DefaultPluginManager();
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
