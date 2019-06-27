@@ -42,7 +42,9 @@ public class Main {
         for (ChatService<?, ?> service : services) {
             @SuppressWarnings("unchecked") 
             ServiceConfig<ServiceData> config = (ServiceConfig<ServiceData>) service.getConfig();
-            config.onLoad(cfgReader.get(service.getName(), config::makeDefault));
+            if (config != null) {
+            	config.onLoad(cfgReader.get(service.getName(), config::makeDefault));
+            }
         }
         
         Hooks.onOperatorDebug();
