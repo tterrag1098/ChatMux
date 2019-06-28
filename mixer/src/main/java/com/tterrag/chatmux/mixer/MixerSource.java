@@ -52,7 +52,8 @@ public class MixerSource implements ChatSource {
         return getClient(channel).inbound()
             .ofType(MixerEvent.Message.class)
             .flatMap(e -> helper.getUser(e.userId)
-                                .map(u -> new MixerMessage(helper, getClient(channel), e, u.avatarUrl)));
+                                .zipWith(helper.getChannel(e.channel), 
+                                        (u, c) -> new MixerMessage(helper, getClient(channel), e, c.name, u.avatarUrl)));
     }
     
     @Override

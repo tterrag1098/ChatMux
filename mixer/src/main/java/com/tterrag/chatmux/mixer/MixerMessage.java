@@ -15,8 +15,8 @@ public class MixerMessage extends ChatMessage {
     private final WebSocketClient<?, MixerMethod> client;
     private final MixerEvent.Message message;
 
-    public MixerMessage(MixerRequestHelper helper, WebSocketClient<?, MixerMethod> client, MixerEvent.Message message, @Nullable String avatar) {
-        super(MixerService.getInstance(), "" + message.channel, message.username, message.message.rawText(), avatar);
+    public MixerMessage(MixerRequestHelper helper, WebSocketClient<?, MixerMethod> client, MixerEvent.Message message, String channelName, @Nullable String avatar) {
+        super(MixerService.getInstance(), channelName, "" + message.channel, message.username, message.message.rawText(), avatar);
         this.helper = helper;
         this.client = client;
         this.message = message;
