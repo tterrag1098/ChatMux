@@ -65,7 +65,7 @@ public class DiscordMessage extends ChatMessage {
                     Matcher m2 = pattern.matcher(content);
                     StringBuffer sb = new StringBuffer();
                     while (m2.find()) {
-                        T res = map.get(Long.parseLong(m2.group(idGroup)));
+                        T res = map.get(Snowflake.of(m2.group(idGroup)));
                         m2.appendReplacement(sb, converter.apply(res));
                     }
                     m2.appendTail(sb);
