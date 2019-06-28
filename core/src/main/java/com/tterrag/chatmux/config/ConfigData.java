@@ -17,7 +17,7 @@ import lombok.ToString;
 public class ConfigData {
     
     @Conversion(ChatService.Conv.class)
-    private ChatService<?, ?> main;
+    private ChatService main;
     
     @PreserveNotNull
     private List<PermissionEntry> admins = new ArrayList<>();

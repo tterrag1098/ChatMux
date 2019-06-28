@@ -3,9 +3,9 @@ package com.tterrag.chatmux.bridge;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public interface ChatSource<I, O> {
+public interface ChatSource {
     
-    public ChatService<I, O> getType();
+    public ChatService getType();
 
     /**
      * Parse raw user input into a "real" channel name. For instance, converting from discord mention ({@code <#\d+>})

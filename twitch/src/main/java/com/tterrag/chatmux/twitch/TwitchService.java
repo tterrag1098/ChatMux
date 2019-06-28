@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Extension
-public class TwitchService extends ChatService<IRCEvent, String> {
+public class TwitchService extends ChatService {
 
     public TwitchService() {
         super("twitch");
@@ -22,7 +22,7 @@ public class TwitchService extends ChatService<IRCEvent, String> {
     }
     
     @Override
-    protected ChatSource<IRCEvent, String> createSource() {
+    protected ChatSource createSource() {
         TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), getData().getToken());
         return new TwitchSource(helper);
     }

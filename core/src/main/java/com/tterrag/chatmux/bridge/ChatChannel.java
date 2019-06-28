@@ -10,10 +10,10 @@ import reactor.core.publisher.Flux;
 public class ChatChannel<I, O> {
 
     String name;
-    ChatService<I, O> type;
+    ChatService type;
     
     @JsonCreator
-    public ChatChannel(@JsonProperty("name") String name, @JsonProperty("type") ChatService<I, O> type) {
+    public ChatChannel(@JsonProperty("name") String name, @JsonProperty("type") ChatService type) {
         this.name = name;
         this.type = type;
     }

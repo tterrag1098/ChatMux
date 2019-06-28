@@ -91,12 +91,12 @@ public enum LinkManager {
     @Value
     private static class MessageKey {
         
-        ChatService<?, ?> type;
+        ChatService type;
         
         String id;
     }
     
-    private final Map<ChatService<?, ?>, Multimap<String, Link>> links = new HashMap<>();
+    private final Map<ChatService, Multimap<String, Link>> links = new HashMap<>();
         
     private final LoadingCache<MessageKey, List<ChatMessage>> messageCache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).recordStats().build(new CacheLoader<MessageKey, List<ChatMessage>>() {
         @Override
@@ -163,7 +163,7 @@ public enum LinkManager {
         }
     }
     
-    public List<ChatMessage> getLinkedMessages(ChatService<?, ?> type, String id) {
+    public List<ChatMessage> getLinkedMessages(ChatService type, String id) {
         try {
             return messageCache.get(new MessageKey(type, id));
         } catch (ExecutionException e) {

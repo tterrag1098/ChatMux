@@ -32,14 +32,14 @@ public class Main {
         pluginManager.startPlugins();
 
         @SuppressWarnings({ "unchecked", "rawtypes" }) 
-        List<ChatService<?, ?>> services = (List) pluginManager.getExtensions(ChatService.class);
+        List<ChatService> services = (List) pluginManager.getExtensions(ChatService.class);
 
         // Load config after plugins so that ChatService converter works
         ConfigReader cfgReader = new ConfigReader();
         cfgReader.load();
         cfg = cfgReader.getData();
         
-        for (ChatService<?, ?> service : services) {
+        for (ChatService service : services) {
             @SuppressWarnings("unchecked") 
             ServiceConfig<ServiceData> config = (ServiceConfig<ServiceData>) service.getConfig();
             if (config != null) {

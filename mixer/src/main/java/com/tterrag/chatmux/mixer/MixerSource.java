@@ -22,8 +22,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
-public
-class MixerSource implements ChatSource<MixerEvent, MixerMethod> {
+public class MixerSource implements ChatSource {
     
     @NonNull
     private final MixerRequestHelper helper;
@@ -34,7 +33,7 @@ class MixerSource implements ChatSource<MixerEvent, MixerMethod> {
     private final Map<Integer, Disposable> connections = new HashMap<>();
 
     @Override
-    public ChatService<MixerEvent, MixerMethod> getType() {
+    public ChatService getType() {
         return MixerService.getInstance();
     }
     

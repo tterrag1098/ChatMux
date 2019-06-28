@@ -15,6 +15,6 @@ public class AdminData {
     private boolean enabled;
     
     @Conversion(ChatService.Conv.class)
-    private ChatService<?, ?> main;
+    private ChatService main;
 
 }

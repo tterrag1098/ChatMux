@@ -9,7 +9,7 @@ import reactor.util.annotation.Nullable;
 @NonFinal
 public abstract class ChatMessage {
     
-    ChatService<?, ?> source;
+    ChatService source;
     String channel;
     String channelId;
 
@@ -18,11 +18,11 @@ public abstract class ChatMessage {
     
     @Nullable String avatar;
     
-    protected ChatMessage(ChatService<?, ?> type, String channel, String user, String content, @Nullable String avatar) {
+    protected ChatMessage(ChatService type, String channel, String user, String content, @Nullable String avatar) {
         this(type, channel, channel, user, content, avatar);
     }
     
-    protected ChatMessage(ChatService<?, ?> type, String channel, String channelId, String user, String content, @Nullable String avatar) {
+    protected ChatMessage(ChatService type, String channel, String channelId, String user, String content, @Nullable String avatar) {
         this.source = type;
         this.channel = channel;
         this.channelId = channelId;

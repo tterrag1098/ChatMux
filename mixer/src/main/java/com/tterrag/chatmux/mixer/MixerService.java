@@ -15,7 +15,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Extension
-public class MixerService extends ChatService<MixerEvent, MixerMethod> {
+public class MixerService extends ChatService {
 
     public MixerService() {
         super("mixer");
@@ -23,7 +23,7 @@ public class MixerService extends ChatService<MixerEvent, MixerMethod> {
     }
     
     @Override
-    protected ChatSource<MixerEvent, MixerMethod> createSource() {
+    protected ChatSource createSource() {
         MixerRequestHelper helper = new MixerRequestHelper(new ObjectMapper(), getData().getClientId(), getData().getToken());
         return new MixerSource(helper);
     }

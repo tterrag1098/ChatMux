@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Extension
-public class FactorioService extends ChatService<FactorioMessage, String> {
+public class FactorioService extends ChatService {
     
     public FactorioService() {
         super("factorio");
@@ -20,7 +20,7 @@ public class FactorioService extends ChatService<FactorioMessage, String> {
     }
     
     @Override
-    protected ChatSource<FactorioMessage, String> createSource() {
+    protected ChatSource createSource() {
         return new FactorioSource();
     }
     

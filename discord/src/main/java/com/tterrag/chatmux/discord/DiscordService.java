@@ -24,7 +24,7 @@ import reactor.core.scheduler.Schedulers;
 
 @Extension
 @Slf4j
-public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
+public class DiscordService extends ChatService {
     
     @Getter
     public static Mono<User> botUser = Mono.empty();
@@ -54,7 +54,7 @@ public class DiscordService extends ChatService<Dispatch, GatewayPayload<?>> {
     }
     
     @Override
-    protected ChatSource<Dispatch, GatewayPayload<?>> createSource() {
+    protected ChatSource createSource() {
         return new DiscordSource(getData().getToken());
     }
     

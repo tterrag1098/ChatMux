@@ -40,7 +40,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 import reactor.util.function.Tuples;
 
-public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
+public class DiscordSource implements ChatSource {
     
     @NonNull
     private static final String ADMIN_EMOTE = "\u274C";
@@ -62,7 +62,7 @@ public class DiscordSource implements ChatSource<Dispatch, GatewayPayload<?>> {
     }
 
     @Override
-    public ChatService<Dispatch, GatewayPayload<?>> getType() {
+    public ChatService getType() {
         return DiscordService.getInstance();
     }
     

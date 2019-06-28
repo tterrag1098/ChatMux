@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
 @Slf4j
-public class FactorioSource implements ChatSource<FactorioMessage, String> {
+public class FactorioSource implements ChatSource {
     
     private static final String GLOBAL_CHAT = "/silent-command game.print(\"%1$s\")";
     private static final String TEAM_CHAT = "/silent-command game.forces[\"%2$s\"].print(\"%1$s\")";
@@ -23,7 +23,7 @@ public class FactorioSource implements ChatSource<FactorioMessage, String> {
     private final FactorioClient factorio = new FactorioClient(new File(FactorioService.getInstance().getData().getInput()), new File(FactorioService.getInstance().getData().getOutput()));
     
     @Override
-    public ChatService<FactorioMessage, String> getType() {
+    public ChatService getType() {
         return FactorioService.getInstance();
     }
     

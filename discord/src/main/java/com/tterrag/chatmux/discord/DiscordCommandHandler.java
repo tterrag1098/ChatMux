@@ -20,7 +20,7 @@ public class DiscordCommandHandler {
         if (data.length != 2) {
             return Mono.error(new IllegalArgumentException("Link must be in the format `service/channel`"));
         }
-        ChatService<?, ?> type = ChatService.byName(data[0]);
+        ChatService type = ChatService.byName(data[0]);
         if (type == null) {
             return Mono.error(new IllegalArgumentException("Invalid service name"));
         }

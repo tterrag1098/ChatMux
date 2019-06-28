@@ -18,7 +18,7 @@ import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
 public
-class TwitchSource implements ChatSource<IRCEvent, String> {
+class TwitchSource implements ChatSource {
     
     private final TwitchRequestHelper helper;
     private boolean connected;
@@ -27,7 +27,7 @@ class TwitchSource implements ChatSource<IRCEvent, String> {
     private final WebSocketClient<IRCEvent, String> twitch = new SimpleWebSocketClient<>();
     
     @Override
-    public ChatService<IRCEvent, String> getType() {
+    public ChatService getType() {
         return TwitchService.getInstance();
     }
     

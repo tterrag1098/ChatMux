@@ -28,11 +28,11 @@ import reactor.util.annotation.Nullable;
 
 @JsonSerialize(using = Serializer.class)
 @JsonDeserialize(using = Deserializer.class)
-public abstract class ChatService<I, O> implements ExtensionPoint {
+public abstract class ChatService implements ExtensionPoint {
 
-    private static final Map<String, ChatService<?, ?>> types = new HashMap<>();
+    private static final Map<String, ChatService> types = new HashMap<>();
     
-    private ChatSource<I, O> source;
+    private ChatSource source;
     
     @Getter
     @NonNull
@@ -47,15 +47,15 @@ public abstract class ChatService<I, O> implements ExtensionPoint {
         source = createSource();
     }
     
-    public final ChatSource<I, O> getSource() {
-        final ChatSource<I, O> source = this.source;
+    public final ChatSource getSource() {
+        final ChatSource source = this.source;
         if (source == null) {
             throw new IllegalStateException("Source not created");
-        }
+        }   
         return source;
     }
     
-    protected abstract ChatSource<I, O> createSource();
+    protected abstract ChatSource createSource();
     
     public abstract @Nullable ServiceConfig<?> getConfig();
     
@@ -69,38 +69,38 @@ public abstract class ChatService<I, O> implements ExtensionPoint {
     }
 
     @Nullable
-    public static final ChatService<?, ?> byName(@Nullable String name) {
+    public static final ChatService byName(@Nullable String name) {
         return name == null ? null : types.get(name.toLowerCase(Locale.ROOT));
     }
 
-    public static class Conv implements Converter<ChatService<?, ?>, String> {
+    public static class Conv implements Converter<ChatService, String> {
 
         @Override
-        public @Nullable ChatService<?, ?> convertToField(@Nullable String value) {
+        public @Nullable ChatService convertToField(@Nullable String value) {
             return byName(value);
         }
 
         @Override
-        public String convertFromField(@SuppressWarnings("null") ChatService<?, ?> value) {
+        public String convertFromField(@SuppressWarnings("null") ChatService value) {
             return value.name;
         }
     }
 }
 
-class Serializer extends JsonSerializer<ChatService<?, ?>> {
+class Serializer extends JsonSerializer<ChatService> {
 
     @SuppressWarnings("null")
     @Override
-    public void serialize(ChatService<?, ?> value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    public void serialize(ChatService value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeString(value.getName());
     }
 }
 
-class Deserializer extends JsonDeserializer<ChatService<?, ?>> {
+class Deserializer extends JsonDeserializer<ChatService> {
 
     @SuppressWarnings("null")
     @Override
-    public @Nullable ChatService<?, ?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+    public @Nullable ChatService deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
         return ChatService.byName(p.getValueAsString());
     }
 }
