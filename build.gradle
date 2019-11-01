@@ -151,6 +151,13 @@ def mergeFiles() {
     	if (subprojectLogbackXml.exists()) logbackXml << subprojectLogbackXml.text.replaceAll('</?subconfig>', '')
     }
     logbackXml << '\n</configuration>'
+    
+    File extensionsIndex = new File(project.sourceSets.main.output.classesDirs.getSingleFile(), 'META-INF/extensions.idx')
+    extensionsIndex.getParentFile().mkdirs()
+    subprojects.each { subproject ->
+    	File subprojectIndex = new File(subproject.sourceSets.main.output.classesDirs.getSingleFile(), 'META-INF/extensions.idx') 
+    	if (subprojectIndex.exists()) extensionsIndex << subprojectIndex.text.replaceAll('#[^\\n]+\\n', '')
+   	}
 }
 
 // Collect all sources from the modules and merge them into the "main" jar.
