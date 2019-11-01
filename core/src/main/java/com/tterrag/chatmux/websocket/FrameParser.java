@@ -106,7 +106,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
         out.options(NettyPipeline.SendOptions::flushOnEach)
             .sendObject(outboundExchange.log(log.getName()).map(serializer::apply).map(TextWebSocketFrame::new))
             .then()
-            .log(log.getName())
+            .log(log.getName() + ".out")
             .doOnError(t -> log.debug("Sender encountered an error", t))
             .doOnSuccess(v -> log.debug("Sender succeeded"))
             .doOnCancel(() -> log.debug("Sender cancelled"))
@@ -124,6 +124,9 @@ public class FrameParser<I, O> implements ConnectionObserver {
             .map(deserializer::apply)
             .doOnNext(inboundExchange::onNext)
             .doOnError(t -> log.error("Exception receiving frame", t))
+            .doOnComplete(() -> log.debug("Receiver completed"))
+            .doOnCancel(() -> log.debug("Receiver canceled"))
+            .doOnTerminate(() -> log.debug("Receiver terminated"))
             .doOnComplete(() -> {
                 log.debug("Receiver completed");
                 CloseStatus closeStatus = reason.get();
@@ -135,7 +138,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
                     outboundExchange.onComplete();                             }
             })
             .then()
-            .log(log.getName());
+            .log(log.getName() + ".in");
     }
 
     /**
