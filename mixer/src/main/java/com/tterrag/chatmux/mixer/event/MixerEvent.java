@@ -8,6 +8,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class MixerEvent {
 
     public static MixerEvent parse(String raw) {
@@ -24,7 +27,7 @@ public class MixerEvent {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Exception parsing MixerEvent", e);
             throw new RuntimeException(e);
         }
         return new MixerEvent();

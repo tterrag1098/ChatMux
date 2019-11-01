@@ -40,11 +40,11 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
                     .subscribe(receiverSink::next);
 
             // Subscribe the receiver to process and transform the inbound payloads into Dispatch events
-            Disposable receiverSub = receiver.log(log.getName()).doOnError(Throwable::printStackTrace).subscribe();
+            Disposable receiverSub = receiver.log(log.getName()).doOnError(t -> log.error("Exception receiving websocket data", t)).subscribe();
 
             // Subscribe the handler's outbound exchange with our outgoing signals
             // routing error and completion signals to close the gateway
-            Disposable senderSub = sender.log(log.getName()).subscribe(handler.outbound()::onNext, t -> { t.printStackTrace(); handler.close(); }, handler::close);
+            Disposable senderSub = sender.log(log.getName()).subscribe(handler.outbound()::onNext, t -> { log.error("Exception sending websocket data", t); handler.close(); }, handler::close);
 
             return HttpClient.create()
                     .observe((connection, newState) -> log.debug("{} {}", newState, connection))
@@ -52,7 +52,7 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
                     .websocket()
                     .uri(url)
                     .handle(handler::handle)
-                    .doOnError(Throwable::printStackTrace)
+                    .doOnError(t -> log.error("Exception handling websocket data", t))
                     .doOnTerminate(() -> {
                         log.debug("Terminating websocket client, disposing subscriptions");
                         inboundSub.dispose();

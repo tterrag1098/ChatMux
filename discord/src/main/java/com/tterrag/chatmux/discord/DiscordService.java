@@ -78,7 +78,7 @@ public class DiscordService extends ChatService {
                         .flatMap(t -> commands.handle(t.getT1(), t.getT2(), mc.getMessage().getContent().orElse("").split("\\s+"))
                         					  .doOnError(ex -> log.error("Exception handling discord commands:", ex))
                         					  .onErrorResume($ -> Mono.empty())))
-                .doOnError(Throwable::printStackTrace)
+                .doOnError(t -> log.error("Exception handling message create", t))
                 .then();
         
         return Mono.when(botUser, commandListener, discord.login());

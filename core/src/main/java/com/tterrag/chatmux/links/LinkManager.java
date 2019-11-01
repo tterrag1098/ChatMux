@@ -31,6 +31,7 @@ import com.tterrag.chatmux.bridge.ChatService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
 import reactor.util.annotation.Nullable;
 
@@ -61,17 +62,15 @@ public enum LinkManager {
         }
     }
     
+    @Slf4j
     private static class LinkConverter implements Converter<Link, Link> {
 
         @Override
         public Link convert(@SuppressWarnings("null") Link value) {
             Disposable sub = value.getFrom().connect()
                     .flatMap(m -> value.getTo().getType().getSource().send(value.getTo().getName(), m, value.isRaw()))
-                    .doOnError(Throwable::printStackTrace)
+                    .doOnError(t -> log.error("Exception processing message", t))
                     .subscribe();
-            if (sub == null) {
-                throw new IllegalArgumentException("Connecting to saved link failed");
-            }
             return new Link(value.getFrom(), value.getTo(), value.isRaw(), sub);
         }
 

@@ -17,8 +17,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
-public
-class TwitchSource implements ChatSource {
+public class TwitchSource implements ChatSource {
     
     private final TwitchRequestHelper helper;
     private boolean connected;

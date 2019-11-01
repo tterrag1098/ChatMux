@@ -14,7 +14,6 @@ import discord4j.core.DiscordClient;
 import discord4j.core.object.entity.Channel;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.GuildChannel;
-import discord4j.core.object.entity.GuildEmoji;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Role;
@@ -22,9 +21,11 @@ import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.util.Snowflake;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 public class DiscordMessage extends ChatMessage {
     
     static final Pattern CHANNEL_MENTION = Pattern.compile("<#(\\d+)>");
@@ -59,7 +60,7 @@ public class DiscordMessage extends ChatMessage {
         }
         return Flux.fromIterable(found)
                 .flatMap(setup)
-                .onErrorContinue((t, o) -> t.printStackTrace())
+                .onErrorContinue((t, o) -> log.error("Exception stripping mentions", t))
                 .collectMap(keyExtractor)
                 .map(map -> {
                     Matcher m2 = pattern.matcher(content);

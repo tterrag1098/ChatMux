@@ -2,6 +2,7 @@ package com.tterrag.chatmux.util;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import org.reactivestreams.Publisher;
 
@@ -61,7 +62,7 @@ public abstract class RequestHelper {
     }
     
     public <T> Mono<T> get(String endpoint, Class<? extends T> type) {
-        return request(endpoint, HttpMethod.GET).<T>responseSingle((r, buf) -> handleResponse(r, buf, type)).doOnError(t -> log.error("Error during GET", t));
+        return request(endpoint, HttpMethod.GET).<T>responseSingle((r, buf) -> handleResponse(r, buf, type)).doOnError(requestError(HttpMethod.GET, endpoint));
     }
     
     private Publisher<? extends ByteBuf> encodePayload(Object payload) {
@@ -75,25 +76,30 @@ public abstract class RequestHelper {
     }
     
     public <T> Mono<T> post(String endpoint, Object payload, Class<? extends T> type) {
-        return post(endpoint, payload).<T>responseSingle((r, buf) -> handleResponse(r, buf, type)).doOnError(t -> log.error("Error during POST", t));
+        return post(endpoint, payload).<T>responseSingle((r, buf) -> handleResponse(r, buf, type)).doOnError(requestError(HttpMethod.POST, endpoint));
     }
 
     protected Mono<Void> postVoid(String endpoint, Object payload) {
-        return post(endpoint, payload).response().doOnError(Throwable::printStackTrace).then();
+        return post(endpoint, payload).response().doOnError(requestError(HttpMethod.POST, endpoint)).then();
     }
     
     public Mono<Void> delete(String endpoint) {
-        return request(endpoint, HttpMethod.DELETE).response().doOnError(Throwable::printStackTrace).then();
+        return request(endpoint, HttpMethod.DELETE).response().doOnError(requestError(HttpMethod.DELETE, endpoint)).then();
     }
     
     public Mono<Void> put(String endpoint) {
-        return request(endpoint, HttpMethod.PUT).response().doOnNext(System.out::println).doOnError(Throwable::printStackTrace).then();
+        return request(endpoint, HttpMethod.PUT).response().doOnError(requestError(HttpMethod.PUT, endpoint)).then();
     }
     
     public Mono<Void> patch(String endpoint, Object payload) {
         return request(endpoint, HttpMethod.PATCH)
                 .send(encodePayload(payload))
                 .response()
+                .doOnError(requestError(HttpMethod.PATCH, endpoint))
                 .then();
+    }
+    
+    private Consumer<Throwable> requestError(HttpMethod method, String endpoint) {
+        return t -> log.error("Error during " + method.name() + " to " + endpoint, t);
     }
 }

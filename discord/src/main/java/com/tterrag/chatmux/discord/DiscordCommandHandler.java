@@ -8,11 +8,13 @@ import com.tterrag.chatmux.links.LinkManager.Link;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
 @RequiredArgsConstructor
+@Slf4j
 public class DiscordCommandHandler {
     
     private Mono<ChatChannel<?, ?>> getChannel(String input) {
@@ -43,22 +45,23 @@ public class DiscordCommandHandler {
                             .doOnNext(s -> LinkManager.INSTANCE.addLink(t.getT1(), t.getT2(), raw, s))
                             .thenReturn(t))
                    .flatMap(t -> channel.createMessage("Link established! " + t.getT1() + " -> " + t.getT2()))
+                   .doOnError(t -> log.error("Exception establishing link", t))
                    .onErrorResume(IllegalArgumentException.class, e -> channel.createMessage(e.getMessage()))
-                   .doOnError(Throwable::printStackTrace);
+                   .doOnError(t -> log.error("Secondary exception notifying error", t));
         } else if (args.length >= 2 && args[0].equals("-link")) {
             Mono<ChatChannel<?, ?>> from = getChannel(args[1]);
             Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().asString(), DiscordService.getInstance()));
             
             Mono<Tuple2<ChatChannel<?, ?>, ChatChannel<?, ?>>> sources = Mono.zip(from, to);
 
-            return sources.doOnError(Throwable::printStackTrace)
-                   .flatMap(t -> {
+            return sources.flatMap(t -> {
                        if (LinkManager.INSTANCE.removeLink(t.getT1(), t.getT2())) {
                            return channel.createMessage("Link broken! " + t.getT1() + " -/> " + t.getT2());
                        } else {
                            return channel.createMessage("No such link to remove");
                        }
                    })
+                   .doOnError(t -> log.error("Exception removing link", t))
                    .onErrorResume(IllegalArgumentException.class, m -> channel.createMessage(m.toString()));
         } else if (args[0].equals("~links")) {
             StringBuilder msg = new StringBuilder();
