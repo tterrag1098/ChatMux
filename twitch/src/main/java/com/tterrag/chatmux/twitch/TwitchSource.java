@@ -48,12 +48,17 @@ public class TwitchSource implements ChatSource {
         final String lcChan = channel.toLowerCase(Locale.ROOT);
         twitch.outbound().next("JOIN #" + lcChan);
         
-        return twitch.inbound().ofType(IRCEvent.Message.class)
+        Flux<IRCEvent.Ping> pingPong = twitch.inbound().ofType(IRCEvent.Ping.class)
+                .doOnNext(p -> twitch.outbound().next("PONG :tmi.twitch.tv"));
+        
+        Flux<ChatMessage> messageRelay = twitch.inbound().ofType(IRCEvent.Message.class)
             .filter(e -> e.getChannel().equals(lcChan))
             .flatMap(e -> helper.getUsers(e.getUser())
                                 .flatMapMany(Flux::fromArray)
                                 .next()
                                 .map(u -> new TwitchMessage(twitch, e, u.displayName, u.avatarUrl)));
+        
+        return Flux.merge(pingPong, messageRelay).ofType(ChatMessage.class);
     }
     
     @Override

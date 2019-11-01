@@ -13,7 +13,7 @@ public class IRCEvent {
     private static final Pattern MESSAGE = Pattern.compile("^(?:@(.*)\\s)?:(\\w+)!\\w+@\\w+\\.tmi\\.twitch\\.tv PRIVMSG #(\\w+) :(.+)$");
     
     public static IRCEvent parse(String raw) {
-        if (raw.equals("PING :tmi.twitch.tv")) {
+        if (raw.trim().equals("PING :tmi.twitch.tv")) {
             return new Ping();
         }
         
@@ -38,7 +38,7 @@ public class IRCEvent {
             return new Message(tagMap, m.group(2), m.group(3), m.group(4));
         }
         
-        return new IRCEvent(); // Unknown event
+        return new Unknown(raw); // Unknown event
     }
 
     public static class Ping extends IRCEvent {
@@ -63,4 +63,10 @@ public class IRCEvent {
         private final String user, channel, content;
     }
 
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    public static class Unknown extends IRCEvent {
+        
+        String raw;
+    }
 }

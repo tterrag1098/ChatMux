@@ -28,7 +28,7 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
     @NonNull
     private final FluxSink<I> receiverSink = receiver.sink(FluxSink.OverflowStrategy.LATEST);
     @NonNull
-    private final FluxSink<O> senderSink = sender.sink(FluxSink.OverflowStrategy.LATEST); 
+    private final FluxSink<O> senderSink = sender.sink(FluxSink.OverflowStrategy.LATEST);
         
     public Mono<Void> connect(@NonNull String url, FrameParser<I, O> handler) {
         return Mono.defer(() -> {
