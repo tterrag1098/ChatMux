@@ -41,7 +41,13 @@ public class IRCEvent {
         return new IRCEvent(); // Unknown event
     }
 
-    public static class Ping extends IRCEvent {}
+    public static class Ping extends IRCEvent {
+        
+        @Override
+        public String toString() {
+            return "PING";
+        }
+    }
 
     @Value
     @EqualsAndHashCode(callSuper = false)
@@ -55,7 +61,6 @@ public class IRCEvent {
         private final ImmutableMap<Tag, String> tags;
         
         private final String user, channel, content;
-    
     }
 
 }
