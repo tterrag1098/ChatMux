@@ -78,7 +78,7 @@
   	<appender-ref ref="FILE-REACTOR" />
   </logger>
 
-  <logger name="com.tterrag.chatmux" level="INFO">
+  <logger name="com.tterrag.chatmux" level="DEBUG">
     <appender-ref ref="FILE-CHATMUX" />
   </logger>
 
