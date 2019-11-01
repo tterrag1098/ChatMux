@@ -103,18 +103,16 @@ public class FrameParser<I, O> implements ConnectionObserver {
         AtomicReference<CloseStatus> reason = new AtomicReference<>();
         in.withConnection(connection -> connection.addHandlerLast("client.last.closeHandler", new CloseHandlerAdapter(reason)));
     
-        out.options(NettyPipeline.SendOptions::flushOnEach)
+        Mono<Void> outSub = out.options(NettyPipeline.SendOptions::flushOnEach)
             .sendObject(outboundExchange.log(log.getName()).map(serializer::apply).map(TextWebSocketFrame::new))
             .then()
             .log(log.getName() + ".out")
             .doOnError(t -> log.debug("Sender encountered an error", t))
             .doOnSuccess(v -> log.debug("Sender succeeded"))
             .doOnCancel(() -> log.debug("Sender cancelled"))
-            .doOnTerminate(() -> log.debug("Sender terminated"))
-            .subscribe();
+            .doOnTerminate(() -> log.debug("Sender terminated"));
     
-        return in
-            .receiveFrames()
+        Mono<Void> inSub = in.receiveFrames()
             .map(WebSocketFrame::content)
             .map(buf -> {
                 byte[] bytes = new byte[buf.readableBytes()];
@@ -139,6 +137,8 @@ public class FrameParser<I, O> implements ConnectionObserver {
             })
             .then()
             .log(log.getName() + ".in");
+        
+        return Mono.when(outSub, inSub);
     }
 
     /**

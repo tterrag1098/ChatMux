@@ -12,11 +12,13 @@ import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
+@Slf4j
 public class TwitchSource implements ChatSource {
     
     private final TwitchRequestHelper helper;
@@ -34,7 +36,7 @@ public class TwitchSource implements ChatSource {
     public Flux<ChatMessage> connect(String channel) {
         if (!connected) {
             twitch.connect("wss://irc-ws.chat.twitch.tv:443", new FrameParser<>(IRCEvent::parse, Function.identity()))
-                .subscribe();
+                .subscribe($ -> {}, t -> log.error("Twitch websocket completed with error", t), () -> log.error("Twitch websocket completed"));
             
             twitch.outbound()
                 .next("PASS oauth:" + TwitchService.getInstance().getData().getToken())

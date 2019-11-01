@@ -16,12 +16,14 @@ import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
+@Slf4j
 public class MixerSource implements ChatSource {
     
     @NonNull
@@ -69,7 +71,8 @@ public class MixerSource implements ChatSource {
             final WebSocketClient<MixerEvent, MixerMethod> socket = new SimpleWebSocketClient<>();
             MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), MixerService.getInstance().getData().getClientId(), MixerService.getInstance().getData().getToken());
             mrh.get("/chats/" + chan, ChatResponse.class)
-                .doOnNext(chat -> connections.put(chan, socket.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper())).subscribe()))
+                .doOnNext(chat -> connections.put(chan, socket.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper()))
+                        .subscribe($ -> {}, t -> log.error("Exception handling mixer chat", t), () -> log.error("Mixer chat handler completed"))))
                 .subscribe(chat -> socket.outbound().next(new MixerMethod(MethodType.AUTH, chan, MixerService.getInstance().getData().getUserId(), chat.authKey)));
             return socket;
         });

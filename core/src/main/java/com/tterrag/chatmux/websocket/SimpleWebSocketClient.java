@@ -33,20 +33,22 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
     public Mono<Void> connect(@NonNull String url, FrameParser<I, O> handler) {
         return Mono.defer(() -> {
             // Subscribe each inbound GatewayPayload to the receiver sink
-            Disposable inboundSub = handler.inbound()
+            Flux<I> inboundSub = handler.inbound()
                     .doOnError(t -> log.debug("Inbound encountered an error", t))
                     .doOnCancel(() -> log.debug("Inbound cancelled"))
                     .doOnComplete(() -> log.debug("Inbound completed"))
-                    .subscribe(receiverSink::next);
+                    .doOnNext(receiverSink::next);
 
             // Subscribe the receiver to process and transform the inbound payloads into Dispatch events
-            Disposable receiverSub = receiver.log(log.getName()).doOnError(t -> log.error("Exception receiving websocket data", t)).subscribe();
+            Flux<I> receiverSub = receiver.log(log.getName()).doOnError(t -> log.error("Exception receiving websocket data", t));
 
             // Subscribe the handler's outbound exchange with our outgoing signals
             // routing error and completion signals to close the gateway
-            Disposable senderSub = sender.log(log.getName()).subscribe(handler.outbound()::onNext, t -> { log.error("Exception sending websocket data", t); handler.close(); }, handler::close);
+            Flux<O> senderSub = sender.log(log.getName())
+                    .doOnError(t -> handler.close())
+                    .doOnComplete(handler::close);
 
-            return HttpClient.create()
+            Mono<Void> ws = HttpClient.create()
                     .observe((connection, newState) -> log.debug("{} {}", newState, connection))
                     .wiretap(true)
                     .websocket()
@@ -55,11 +57,10 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
                     .doOnError(t -> log.error("Exception handling websocket data", t))
                     .doOnTerminate(() -> {
                         log.debug("Terminating websocket client, disposing subscriptions");
-                        inboundSub.dispose();
-                        receiverSub.dispose();
-                        senderSub.dispose();
                     })
                     .then();
+            
+            return Mono.when(inboundSub, receiverSub, senderSub, ws);
         });
     }
 
