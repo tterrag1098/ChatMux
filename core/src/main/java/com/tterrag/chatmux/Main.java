@@ -33,6 +33,7 @@ public class Main {
 
         @SuppressWarnings({ "unchecked", "rawtypes" }) 
         List<ChatService> services = (List) pluginManager.getExtensions(ChatService.class);
+        log.info("Loaded services: {}", services);
 
         // Load config after plugins so that ChatService converter works
         ConfigReader cfgReader = new ConfigReader();
@@ -40,6 +41,7 @@ public class Main {
         cfg = cfgReader.getData();
         
         for (ChatService service : services) {
+            log.info("Connecting to service: {}", service);
             @SuppressWarnings("unchecked") 
             ServiceConfig<ServiceData> config = (ServiceConfig<ServiceData>) service.getConfig();
             if (config != null) {
@@ -51,6 +53,7 @@ public class Main {
         
         services.forEach(ChatService::initialize);
         
+        log.info("Delegating to main interface: {}", Main.cfg.getMain());
         return Main.cfg.getMain().runInterface();
     }
 }

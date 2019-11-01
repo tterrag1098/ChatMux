@@ -1,0 +1,35 @@
+<subconfig>
+  <turboFilter class="com.tterrag.chatmux.discord.logging.GatewayEventFilter">
+  	<Exclude>PRESENCE_UPDATE,GUILD_CREATE,GUILD_MEMBERS_CHUNK</Exclude>
+  </turboFilter>
+  
+  <appender name="FILE-D4J" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>logs/d4j.log</file>
+    
+    <filter class="com.tterrag.chatmux.logging.FrameDecoderFilter" />
+        
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- daily rollover -->
+      <fileNamePattern>logs/d4j.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+      <!-- keep 7 days' worth of history capped at 256MB total size -->
+      <maxHistory>7</maxHistory>
+      <totalSizeCap>256MB</totalSizeCap>
+
+    </rollingPolicy>
+
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{35} %msg%n</pattern>
+    </encoder>
+  </appender>
+     
+  <logger name="discord4j" level="INFO">
+    <appender-ref ref="FILE-D4J" />
+  </logger>
+  
+  <logger name="discord4j.dispatch" level="INFO" />
+  
+  <logger name="discord4j.gateway.inbound" level="DEBUG">
+  	<appender-ref ref="NOP" />
+  </logger>
+</subconfig>

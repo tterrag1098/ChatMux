@@ -128,7 +128,7 @@ subprojects {
 
 subprojects.each { subproject -> evaluationDependsOn( subproject.path ) }
 
-def mergeServiceFiles() {
+def mergeFiles() {
     def serviceMap = [:].withDefault{ k -> new StringBuilder() }
     
     subprojects.each { subproject ->
@@ -142,12 +142,21 @@ def mergeServiceFiles() {
         output.getParentFile().mkdirs()
         output << v
     }
+    
+    File logbackXml = new File(project.sourceSets.main.output.resourcesDir, 'logback.xml')
+    logbackXml.getParentFile().mkdirs()
+    logbackXml << '<configuration>\n'
+    subprojects.each { subproject ->
+    	File subprojectLogbackXml = new File(subproject.sourceSets.main.output.resourcesDir, 'logback.xml');
+    	if (subprojectLogbackXml.exists()) logbackXml << subprojectLogbackXml.text.replaceAll('</?subconfig>', '')
+    }
+    logbackXml << '\n</configuration>'
 }
 
 // Collect all sources from the modules and merge them into the "main" jar.
 jar.dependsOn subprojects.tasks['classes']
 jar {
-    doFirst { mergeServiceFiles() }
+    doFirst { mergeFiles() }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     subprojects.each { subproject ->
         from subproject.sourceSets.main.output.classesDirs
@@ -161,7 +170,7 @@ jar {
 // Shadow doesn't help here, so do it all manually
 // Copy contents of all dependencies of all subprojects into a -all jar, excluding some unnecessary things (and ourselves).
 task allJar(type: Jar, dependsOn: subprojects.tasks['classes']) {
-    doFirst { mergeServiceFiles() }
+    doFirst { mergeFiles() }
     classifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from project.sourceSets.main.output

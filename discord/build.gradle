@@ -8,6 +8,8 @@ dependencies {
     implementation libs.d4j, excludeUnneeded
     implementation libs.emoji4j, excludeUnneeded
     
+	implementation libs.logback
+    
     compileOnly project(':core')
     
     annotationProcessor libs.pf4j

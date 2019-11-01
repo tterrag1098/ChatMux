@@ -104,7 +104,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
         in.withConnection(connection -> connection.addHandlerLast("client.last.closeHandler", new CloseHandlerAdapter(reason)));
     
         out.options(NettyPipeline.SendOptions::flushOnEach)
-            .sendObject(outboundExchange.log().map(serializer::apply).map(TextWebSocketFrame::new))
+            .sendObject(outboundExchange.log(log.getName()).map(serializer::apply).map(TextWebSocketFrame::new))
             .then()
             .log()
             .doOnError(t -> log.debug("Sender encountered an error", t))
@@ -135,7 +135,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
                     outboundExchange.onComplete();                             }
             })
             .then()
-            .log();
+            .log(log.getName());
     }
 
     /**
