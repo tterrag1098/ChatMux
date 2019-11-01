@@ -45,6 +45,7 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
             // Subscribe the handler's outbound exchange with our outgoing signals
             // routing error and completion signals to close the gateway
             Flux<O> senderSub = sender.log(log.getName())
+                    .doOnNext(handler.outbound()::onNext)
                     .doOnError(t -> handler.close())
                     .doOnComplete(handler::close);
 
