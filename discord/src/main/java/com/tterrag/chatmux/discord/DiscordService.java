@@ -81,6 +81,8 @@ public class DiscordService extends ChatService {
                 .doOnError(t -> log.error("Exception handling message create", t))
                 .then();
         
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> discord.logout().block()));
+        
         return Mono.when(botUser, commandListener, discord.login());
     }
 }
