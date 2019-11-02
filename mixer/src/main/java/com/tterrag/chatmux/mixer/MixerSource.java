@@ -61,12 +61,14 @@ public class MixerSource implements ChatSource<MixerMessage> {
     public Flux<MixerMessage> connect(String channel) {
         return getClient(channel)
             .flatMapMany(client -> client.inbound()
+                    .log(log.getName())
                     .ofType(MixerEvent.Message.class)
                     .filter(m -> !sentMessages.remove(m.id))
                     .flatMap(e -> helper.getUser(e.userId)
                             .zipWith(helper.getChannel(e.channel).flatMap(c -> helper.getUser(c.userId)),
                                     (sender, channelOwner) -> new MixerMessage(helper, client, e, channelOwner.username, sender.avatarUrl))))
-            .doOnError(t -> log.error("Failed to receive from mixer", t));
+            .doOnError(t -> log.error("Failed to receive from mixer", t))
+            .doOnComplete(() -> log.error("Mixer connection completed"));
     }
     
     @Override
