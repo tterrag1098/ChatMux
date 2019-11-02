@@ -9,7 +9,9 @@ import com.google.common.base.Preconditions;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
+@ToString
 public class MixerMethod {
     
     private static int idCounter = 0;

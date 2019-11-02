@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,10 +31,11 @@ public class MixerEvent {
             log.error("Exception parsing MixerEvent", e);
             throw new RuntimeException(e);
         }
-        return new MixerEvent();
+        return new Unknown();
     }
     
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @ToString
     public static class Message extends MixerEvent {
         
         public int channel;
@@ -48,4 +50,7 @@ public class MixerEvent {
         
         public com.tterrag.chatmux.mixer.event.object.Message message;
     }
+    
+    @ToString
+    public static class Unknown extends MixerEvent {}
 }
