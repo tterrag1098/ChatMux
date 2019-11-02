@@ -21,7 +21,7 @@ public class TwitchService extends AbstractChatService<TwitchMessage> {
     
     @Override
     protected TwitchSource createSource() {
-        TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), getData().getToken());
+        TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), getData().getTokenReceive());
         return new TwitchSource(helper);
     }
     

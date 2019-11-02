@@ -11,8 +11,12 @@ import lombok.ToString;
 @Getter
 public class TwitchData implements ServiceData {
     
-    private String token = "YOUR_TOKEN_HERE";
+    private String tokenSend = "YOUR_TOKEN_HERE";
     
-    private String nick = "ChatMux";
+    private String nickSend = "ChatMux";
+    
+    private String tokenReceive = "YOUR_TOKEN_HERE";
+    
+    private String nickReceive = "Broadcaster";
     
 }
