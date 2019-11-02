@@ -3,6 +3,9 @@ package com.tterrag.chatmux.config;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import com.tterrag.chatmux.api.config.ServiceConfig;
+import com.tterrag.chatmux.api.config.ServiceData;
+
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

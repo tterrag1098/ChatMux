@@ -16,9 +16,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.tterrag.chatmux.Main;
-import com.tterrag.chatmux.bridge.ChatMessage;
-import com.tterrag.chatmux.bridge.ChatService;
-import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatSource;
 import com.tterrag.chatmux.discord.util.WebhookMessage;
 import com.tterrag.chatmux.links.LinkManager;
 
@@ -38,7 +37,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 import reactor.util.function.Tuples;
 
-public class DiscordSource implements ChatSource {
+public class DiscordSource implements ChatSource<DiscordMessage> {
     
     @NonNull
     private static final String ADMIN_EMOTE = "\u274C";
@@ -60,7 +59,7 @@ public class DiscordSource implements ChatSource {
     }
 
     @Override
-    public ChatService getType() {
+    public DiscordService getType() {
         return DiscordService.getInstance();
     }
     
@@ -71,11 +70,11 @@ public class DiscordSource implements ChatSource {
                 .onErrorResume(NumberFormatException.class, t -> Mono.just(DiscordMessage.CHANNEL_MENTION.matcher(channel))
                         .filter(Matcher::matches)
                         .map(m -> m.group(1))
-                        .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("ChatChannel must be a mention or ID"))));
+                        .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("ChatChannelImpl must be a mention or ID"))));
     }
 
     @Override
-    public Flux<ChatMessage> connect(String channel) {
+    public Flux<DiscordMessage> connect(String channel) {
         // Discord bots do not "join" channels so we only need to return the flux of messages
         return client.getEventDispatcher()
                 .on(MessageCreateEvent.class)
@@ -89,16 +88,16 @@ public class DiscordSource implements ChatSource {
     }
     
     @Override
-    public Mono<Void> send(String channelName, ChatMessage m, boolean raw) {
+    public Mono<Void> send(String channelName, ChatMessage<?> m, boolean raw) {
         InputStream in = Main.class.getResourceAsStream("/logo.png");
         if (in == null) {
             throw new RuntimeException("Resource not found: logo.png");
         }
         
         Snowflake channel = Snowflake.of(channelName);
-        String usercheck = m.getUser() + " (" + m.getSource() + "/" + m.getChannel() + ")";
+        String usercheck = m.getUser() + " (" + m.getService() + "/" + m.getChannel() + ")";
         if (usercheck.length() > 32) {
-            usercheck = m.getUser() + " (" + m.getSource().getName().substring(0, 1).toUpperCase(Locale.ROOT) + "/" + m.getChannel() + ")";
+            usercheck = m.getUser() + " (" + m.getService().getName().substring(0, 1).toUpperCase(Locale.ROOT) + "/" + m.getChannel() + ")";
         }
         final String username = usercheck;
         return helper.getWebhook(channel, "ChatMux", in)
@@ -117,7 +116,7 @@ public class DiscordSource implements ChatSource {
                     .then();
     }
 
-    private Mono<String> discordify(Snowflake channel, ChatMessage msg) {
+    private Mono<String> discordify(Snowflake channel, ChatMessage<?> msg) {
         if (msg instanceof DiscordMessage) {
             return Mono.just(((DiscordMessage) msg).getRawContent());
         }

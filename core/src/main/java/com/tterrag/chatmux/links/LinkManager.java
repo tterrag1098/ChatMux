@@ -25,9 +25,10 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.tterrag.chatmux.bridge.ChatChannel;
-import com.tterrag.chatmux.bridge.ChatMessage;
-import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.api.bridge.ChatChannel;
+import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatService;
+import com.tterrag.chatmux.bridge.ChatChannelImpl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -44,15 +45,16 @@ public enum LinkManager {
     @RequiredArgsConstructor
     public static class Link {
         
-        ChatChannel<?, ?> from, to;
+        ChatChannelImpl<?> from, to;
 
         boolean raw;
 
         @JsonIgnore
+        @Nullable
         Disposable subscriber;
                 
         @JsonCreator
-        Link(@JsonProperty("from") ChatChannel<?, ?> from, @JsonProperty("to") ChatChannel<?, ?> to, @JsonProperty("raw") boolean raw) {
+        Link(@JsonProperty("from") ChatChannelImpl<?> from, @JsonProperty("to") ChatChannelImpl<?> to, @JsonProperty("raw") boolean raw) {
             this(from, to, raw, null);
         }
         
@@ -68,7 +70,7 @@ public enum LinkManager {
         @Override
         public Link convert(@SuppressWarnings("null") Link value) {
             Disposable sub = value.getFrom().connect()
-                    .flatMap(m -> value.getTo().getType().getSource().send(value.getTo().getName(), m, value.isRaw()))
+                    .flatMap(m -> value.getTo().getService().getSource().send(value.getTo().getName(), m, value.isRaw()))
                     .doOnError(t -> log.error("Exception processing message", t))
                     .subscribe();
             return new Link(value.getFrom(), value.getTo(), value.isRaw(), sub);
@@ -90,16 +92,16 @@ public enum LinkManager {
     @Value
     private static class MessageKey {
         
-        ChatService type;
+        ChatService<?> type;
         
         String id;
     }
     
-    private final Map<ChatService, Multimap<String, Link>> links = new HashMap<>();
+    private final Map<ChatService<?>, Multimap<String, Link>> links = new HashMap<>();
         
-    private final LoadingCache<MessageKey, List<ChatMessage>> messageCache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).recordStats().build(new CacheLoader<MessageKey, List<ChatMessage>>() {
+    private final LoadingCache<MessageKey, List<ChatMessage<?>>> messageCache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).recordStats().build(new CacheLoader<MessageKey, List<ChatMessage<?>>>() {
         @Override
-        public List<ChatMessage> load(@Nullable MessageKey key) throws Exception {
+        public List<ChatMessage<?>> load(@Nullable MessageKey key) throws Exception {
             return new ArrayList<>();
         }
     });
@@ -125,17 +127,17 @@ public enum LinkManager {
         }
     }
     
-    public void addLink(ChatChannel<?, ?> from, ChatChannel<?, ?> to, boolean raw, Disposable subscriber) {
+    public void addLink(ChatChannelImpl<?> from, ChatChannelImpl<?> to, boolean raw, Disposable subscriber) {
         addLink(new Link(from, to, raw, subscriber));
     }
     
     private void addLink(Link link) {
-        links.computeIfAbsent(link.getFrom().getType(), type -> HashMultimap.create()).put(link.getFrom().getName(), link);
+        links.computeIfAbsent(link.getFrom().getService(), type -> HashMultimap.create()).put(link.getFrom().getName(), link);
         saveLinks();
     }
     
-    public boolean removeLink(ChatChannel<?, ?> from, ChatChannel<?, ?> to) {
-        Multimap<String, Link> typeLinks = links.get(from.getType());
+    public boolean removeLink(ChatChannel<?> from, ChatChannel<?> to) {
+        Multimap<String, Link> typeLinks = links.get(from.getService());
         Collection<Link> channelLinks = typeLinks.get(from.getName());
         List<Link> toRemove = channelLinks.stream().filter(c -> c.getTo().equals(to)).collect(Collectors.toList());
         if (toRemove.isEmpty()) {
@@ -144,7 +146,7 @@ public enum LinkManager {
         toRemove.forEach(l -> l.getSubscriber().dispose());
         channelLinks.removeAll(toRemove);
         if (channelLinks.isEmpty()) {
-            from.getType().getSource().disconnect(from.getName());
+            from.getService().getSource().disconnect(from.getName());
         }
         saveLinks();
         return true;
@@ -154,17 +156,18 @@ public enum LinkManager {
         return links.values().stream().flatMap(m -> m.values().stream()).collect(Collectors.toList());
     }
     
-    public void linkMessage(ChatMessage source, ChatMessage linked) {
+    public void linkMessage(ChatMessage<?> source, ChatMessage<?> linked) {
         try {
-            messageCache.get(new MessageKey(source.getSource(), source.getChannelId())).add(linked);
+            messageCache.get(new MessageKey(source.getService(), source.getChannelId())).add(linked);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
     
-    public List<ChatMessage> getLinkedMessages(ChatService type, String id) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public <M extends ChatMessage<M>> List<ChatMessage<M>> getLinkedMessages(ChatService<M> type, String id) {
         try {
-            return messageCache.get(new MessageKey(type, id));
+            return (List) messageCache.get(new MessageKey(type, id));
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }

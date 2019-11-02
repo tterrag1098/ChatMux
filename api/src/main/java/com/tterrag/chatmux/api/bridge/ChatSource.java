@@ -1,11 +1,11 @@
-package com.tterrag.chatmux.bridge;
+package com.tterrag.chatmux.api.bridge;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public interface ChatSource {
+public interface ChatSource<M extends ChatMessage<M>> {
     
-    public ChatService getType();
+    ChatService<M> getType();
 
     /**
      * Parse raw user input into a "real" channel name. For instance, converting from discord mention ({@code <#\d+>})
@@ -15,9 +15,9 @@ public interface ChatSource {
         return Mono.just(channel);
     }
 
-    public Flux<? extends ChatMessage> connect(String channel);
+    Flux<M> connect(String channel);
     
-    public Mono<Void> send(String channel, ChatMessage payload, boolean raw);
+    Mono<Void> send(String channel, ChatMessage<?> payload, boolean raw);
             
-    public void disconnect(String channel);
+    void disconnect(String channel);
 }

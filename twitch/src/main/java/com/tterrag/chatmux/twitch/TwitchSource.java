@@ -3,9 +3,8 @@ package com.tterrag.chatmux.twitch;
 import java.util.Locale;
 import java.util.function.Function;
 
-import com.tterrag.chatmux.bridge.ChatMessage;
-import com.tterrag.chatmux.bridge.ChatService;
-import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatSource;
 import com.tterrag.chatmux.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.websocket.FrameParser;
 import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
@@ -19,7 +18,7 @@ import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
 @Slf4j
-public class TwitchSource implements ChatSource {
+public class TwitchSource implements ChatSource<TwitchMessage> {
     
     private final TwitchRequestHelper helper;
     private boolean connected;
@@ -28,12 +27,12 @@ public class TwitchSource implements ChatSource {
     private final WebSocketClient<IRCEvent, String> twitch = new SimpleWebSocketClient<>();
     
     @Override
-    public ChatService getType() {
+    public TwitchService getType() {
         return TwitchService.getInstance();
     }
     
     @Override
-    public Flux<ChatMessage> connect(String channel) {
+    public Flux<TwitchMessage> connect(String channel) {
         if (!connected) {
             twitch.connect("wss://irc-ws.chat.twitch.tv:443", new FrameParser<>(IRCEvent::parse, Function.identity()))
                 .subscribe($ -> {}, t -> log.error("Twitch websocket completed with error", t), () -> log.error("Twitch websocket completed"));
@@ -51,17 +50,17 @@ public class TwitchSource implements ChatSource {
         Flux<IRCEvent.Ping> pingPong = twitch.inbound().ofType(IRCEvent.Ping.class)
                 .doOnNext(p -> twitch.outbound().next("PONG :tmi.twitch.tv"));
         
-        Flux<ChatMessage> messageRelay = twitch.inbound().ofType(IRCEvent.Message.class)
+        Flux<TwitchMessage> messageRelay = twitch.inbound().ofType(IRCEvent.Message.class)
             .filter(e -> e.getChannel().equals(lcChan))
             .flatMap(e -> helper.getUser(e.getUser())
                                 .zipWith(helper.getUser(e.getChannel()),
                                         (u, c) -> new TwitchMessage(twitch, e, c.displayName, u.displayName, u.avatarUrl)));
         
-        return Flux.merge(pingPong, messageRelay).ofType(ChatMessage.class);
+        return Flux.merge(pingPong, messageRelay).ofType(TwitchMessage.class);
     }
     
     @Override
-    public Mono<Void> send(String channel, ChatMessage message, boolean raw) {
+    public Mono<Void> send(String channel, ChatMessage<?> message, boolean raw) {
         return Mono.just(twitch.outbound())
                 .doOnNext(sink -> sink.next("PRIVMSG #" + channel.toLowerCase(Locale.ROOT) + " :" + (raw ? message.getContent() : message)))
                 .then();

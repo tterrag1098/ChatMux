@@ -7,9 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
-import com.tterrag.chatmux.bridge.ChatMessage;
-import com.tterrag.chatmux.bridge.ChatService;
-import com.tterrag.chatmux.bridge.ChatSource;
+import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatSource;
 import com.tterrag.chatmux.mixer.event.MixerEvent;
 import com.tterrag.chatmux.mixer.event.ReplyEvent;
 import com.tterrag.chatmux.mixer.method.MixerMethod;
@@ -29,7 +28,7 @@ import reactor.util.annotation.NonNull;
 
 @RequiredArgsConstructor
 @Slf4j
-public class MixerSource implements ChatSource {
+public class MixerSource implements ChatSource<MixerMessage> {
     
     @NonNull
     private final MixerRequestHelper helper;
@@ -44,7 +43,7 @@ public class MixerSource implements ChatSource {
     private final Set<UUID> sentMessages = Sets.newConcurrentHashSet();
 
     @Override
-    public ChatService getType() {
+    public MixerService getType() {
         return MixerService.getInstance();
     }
     
@@ -59,18 +58,19 @@ public class MixerSource implements ChatSource {
     }
     
     @Override
-    public Flux<ChatMessage> connect(String channel) {
+    public Flux<MixerMessage> connect(String channel) {
         return getClient(channel)
             .flatMapMany(client -> client.inbound()
                     .ofType(MixerEvent.Message.class)
                     .filter(m -> !sentMessages.remove(m.id))
                     .flatMap(e -> helper.getUser(e.userId)
                             .zipWith(helper.getChannel(e.channel).flatMap(c -> helper.getUser(c.userId)),
-                                    (sender, channelOwner) -> new MixerMessage(helper, client, e, channelOwner.username, sender.avatarUrl))));
+                                    (sender, channelOwner) -> new MixerMessage(helper, client, e, channelOwner.username, sender.avatarUrl))))
+            .doOnError(t -> log.error("Failed to receive from mixer", t));
     }
     
     @Override
-    public Mono<Void> send(String channel, ChatMessage message, boolean raw) {
+    public Mono<Void> send(String channel, ChatMessage<?> message, boolean raw) {
         return getClient(channel)
                 .doOnNext(client -> client.outbound().next(new MixerMethod(MethodType.MESSAGE, (raw ? message.getContent() : message.toString()))
                         .saveId(sentMethods::put)))
@@ -78,6 +78,7 @@ public class MixerSource implements ChatSource {
                 .ofType(ReplyEvent.class)
                 .filter(re -> getMethodType(re.id) == MethodType.MESSAGE)
                 .doOnNext(re -> sentMessages.add(UUID.fromString(re.data.get("id").asText())))
+                .doOnError(t -> log.error("Failed to send to mixer", t))
                 .then();
     }
     

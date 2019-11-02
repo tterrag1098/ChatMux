@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api libs.pf4j
+    api libs.reactor
+        
+    annotationProcessor libs.lombok
+    annotationProcessor libs.pf4j
+}
+
+shadowJar {
+    mergeServiceFiles()
+    dependencies {
+        exclude dependency('org.projectlombok:lombok')
+    }
+    enabled = true
+}

@@ -6,11 +6,11 @@ import java.util.List;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 
-import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.api.config.ServiceConfig;
+import com.tterrag.chatmux.api.config.ServiceData;
+import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.ConfigData;
 import com.tterrag.chatmux.config.ConfigReader;
-import com.tterrag.chatmux.config.ServiceConfig;
-import com.tterrag.chatmux.config.ServiceData;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Hooks;
@@ -32,15 +32,15 @@ public class Main {
         pluginManager.startPlugins();
 
         @SuppressWarnings({ "unchecked", "rawtypes" }) 
-        List<ChatService> services = (List) pluginManager.getExtensions(ChatService.class);
+        List<AbstractChatService> services = (List) pluginManager.getExtensions(AbstractChatService.class);
         log.info("Loaded services: {}", services);
 
-        // Load config after plugins so that ChatService converter works
+        // Load config after plugins so that AbstractChatService converter works
         ConfigReader cfgReader = new ConfigReader();
         cfgReader.load();
         cfg = cfgReader.getData();
         
-        for (ChatService service : services) {
+        for (AbstractChatService service : services) {
             log.info("Connecting to service: {}", service);
             @SuppressWarnings("unchecked") 
             ServiceConfig<ServiceData> config = (ServiceConfig<ServiceData>) service.getConfig();
@@ -51,7 +51,7 @@ public class Main {
         
         Hooks.onOperatorDebug();
         
-        services.forEach(ChatService::initialize);
+        services.forEach(AbstractChatService::initialize);
         
         log.info("Delegating to main interface: {}", Main.cfg.getMain());
         return Main.cfg.getMain().runInterface();

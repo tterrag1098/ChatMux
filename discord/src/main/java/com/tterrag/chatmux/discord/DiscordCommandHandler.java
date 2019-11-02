@@ -1,7 +1,8 @@
 package com.tterrag.chatmux.discord;
 
-import com.tterrag.chatmux.bridge.ChatChannel;
-import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.api.bridge.ChatChannel;
+import com.tterrag.chatmux.bridge.AbstractChatService;
+import com.tterrag.chatmux.bridge.ChatChannelImpl;
 import com.tterrag.chatmux.links.LinkManager;
 import com.tterrag.chatmux.links.LinkManager.Link;
 
@@ -17,27 +18,27 @@ import reactor.util.function.Tuple2;
 @Slf4j
 public class DiscordCommandHandler {
     
-    private Mono<ChatChannel<?, ?>> getChannel(String input) {
+    private Mono<ChatChannelImpl<?>> getChannel(String input) {
         String[] data = input.split("/");
         if (data.length != 2) {
             return Mono.error(new IllegalArgumentException("Link must be in the format `service/channel`"));
         }
-        ChatService type = ChatService.byName(data[0]);
+        AbstractChatService<?> type = AbstractChatService.byName(data[0]);
         if (type == null) {
             return Mono.error(new IllegalArgumentException("Invalid service name"));
         }
         return Mono.just(data[1])
                 .flatMap(s -> type.getSource().parseChannel(s))
-                .map(name -> new ChatChannel<>(name, type));
+                .map(name -> new ChatChannelImpl<>(name, type));
     }
 
     public Mono<?> handle(TextChannel channel, User author, String... args) {
 
         if (args.length >= 2 && (args[0].equals("+link") || args[0].equals("+linkraw"))) {            
-            Mono<ChatChannel<?, ?>> from = getChannel(args[1]);
-            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().asString(), DiscordService.getInstance()));
+            Mono<ChatChannelImpl<?>> from = getChannel(args[1]);
+            Mono<ChatChannelImpl<?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannelImpl<>(channel.getId().asString(), DiscordService.getInstance()));
             
-            Mono<Tuple2<ChatChannel<?, ?>, ChatChannel<?, ?>>> sources = Mono.zip(from, to);
+            Mono<Tuple2<ChatChannelImpl<?>, ChatChannelImpl<?>>> sources = Mono.zip(from, to);
             
             final boolean raw = args[0].equals("+linkraw");
 
@@ -49,10 +50,10 @@ public class DiscordCommandHandler {
                    .onErrorResume(IllegalArgumentException.class, e -> channel.createMessage(e.getMessage()))
                    .doOnError(t -> log.error("Secondary exception notifying error", t));
         } else if (args.length >= 2 && args[0].equals("-link")) {
-            Mono<ChatChannel<?, ?>> from = getChannel(args[1]);
-            Mono<ChatChannel<?, ?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannel<>(channel.getId().asString(), DiscordService.getInstance()));
+            Mono<ChatChannelImpl<?>> from = getChannel(args[1]);
+            Mono<ChatChannelImpl<?>> to = args.length >= 3 ? getChannel(args[2]) : Mono.just(new ChatChannelImpl<>(channel.getId().asString(), DiscordService.getInstance()));
             
-            Mono<Tuple2<ChatChannel<?, ?>, ChatChannel<?, ?>>> sources = Mono.zip(from, to);
+            Mono<Tuple2<ChatChannel<?>, ChatChannel<?>>> sources = Mono.zip(from, to);
 
             return sources.flatMap(t -> {
                        if (LinkManager.INSTANCE.removeLink(t.getT1(), t.getT2())) {
@@ -73,8 +74,8 @@ public class DiscordCommandHandler {
         return Mono.empty();
     }
     
-    public static Mono<Disposable> connect(ChatChannel<?, ?> from, ChatChannel<?, ?> to, boolean raw) {
-        return Mono.just(to.getType().getSource())
+    public static Mono<Disposable> connect(ChatChannel<?> from, ChatChannel<?> to, boolean raw) {
+        return Mono.just(to.getService().getSource())
                 .map(s -> from.connect().flatMap(m -> s.send(to.getName(), m, raw)).subscribe());
     }
 }

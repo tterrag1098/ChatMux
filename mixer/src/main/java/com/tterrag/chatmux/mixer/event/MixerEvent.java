@@ -23,7 +23,7 @@ public class MixerEvent {
                 return om.readValue(raw, ReplyEvent.class);
             } else if (type.equals("event")) {
                 String event = data.get("event").asText();
-                if (event.equals("ChatMessage")) {
+                if (event.equals("AbstractChatMessage")) {
                     return om.readValue(om.writeValueAsString(data.get("data")), Message.class);
                 } else if (event.equals("WelcomeEvent")) {
                     return om.readValue(om.writeValueAsString(data.get("data")), Welcome.class);

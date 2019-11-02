@@ -1,12 +1,12 @@
 package com.tterrag.chatmux.twitch;
 
-import com.tterrag.chatmux.bridge.ChatMessage;
+import com.tterrag.chatmux.bridge.AbstractChatMessage;
 import com.tterrag.chatmux.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import reactor.core.publisher.Mono;
 
-public class TwitchMessage extends ChatMessage {
+public class TwitchMessage extends AbstractChatMessage<TwitchMessage> {
     
     private final WebSocketClient<?, String> client;
     private final IRCEvent.Message message;

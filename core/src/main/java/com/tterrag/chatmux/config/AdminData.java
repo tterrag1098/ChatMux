@@ -1,7 +1,7 @@
 package com.tterrag.chatmux.config;
 
 import com.electronwill.nightconfig.core.conversion.Conversion;
-import com.tterrag.chatmux.bridge.ChatService;
+import com.tterrag.chatmux.bridge.AbstractChatService;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -14,7 +14,7 @@ public class AdminData {
     
     private boolean enabled;
     
-    @Conversion(ChatService.Conv.class)
-    private ChatService main;
+    @Conversion(AbstractChatService.Conv.class)
+    private AbstractChatService<?> main;
 
 }

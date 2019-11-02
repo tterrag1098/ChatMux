@@ -1,5 +1,9 @@
 package com.tterrag.chatmux.bridge;
 
+import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatService;
+
+import lombok.Getter;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import reactor.core.publisher.Mono;
@@ -7,23 +11,28 @@ import reactor.util.annotation.Nullable;
 
 @Value
 @NonFinal
-public abstract class ChatMessage {
+public abstract class AbstractChatMessage<M extends ChatMessage<M>> implements ChatMessage<M> {
     
-    ChatService source;
+    @Getter(onMethod = @__({@Override}))
+    ChatService<M> service;
+    @Getter(onMethod = @__({@Override}))
     String channel;
+    @Getter(onMethod = @__({@Override}))
     String channelId;
 
+    @Getter(onMethod = @__({@Override}))
     String user;
+    @Getter(onMethod = @__({@Override}))
     String content;
     
     @Nullable String avatar;
     
-    protected ChatMessage(ChatService type, String channel, String user, String content, @Nullable String avatar) {
+    protected AbstractChatMessage(ChatService<M> type, String channel, String user, String content, @Nullable String avatar) {
         this(type, channel, channel, user, content, avatar);
     }
     
-    protected ChatMessage(ChatService type, String channel, String channelId, String user, String content, @Nullable String avatar) {
-        this.source = type;
+    protected AbstractChatMessage(ChatService<M> type, String channel, String channelId, String user, String content, @Nullable String avatar) {
+        this.service = type;
         this.channel = channel;
         this.channelId = channelId;
         this.user = user;
@@ -48,6 +57,6 @@ public abstract class ChatMessage {
     
     @Override
     public String toString() {
-        return "[" + getSource() + "/" + getChannel() + "] <" + getUser() + "> " + getContent();
+        return "[" + getService() + "/" + getChannel() + "] <" + getUser() + "> " + getContent();
     }
 }

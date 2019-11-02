@@ -3,18 +3,16 @@ package com.tterrag.chatmux.twitch;
 import org.pf4j.Extension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tterrag.chatmux.bridge.ChatService;
-import com.tterrag.chatmux.bridge.ChatSource;
-import com.tterrag.chatmux.config.ServiceConfig;
+import com.tterrag.chatmux.api.config.ServiceConfig;
+import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
-import com.tterrag.chatmux.twitch.irc.IRCEvent;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
 @Extension
-public class TwitchService extends ChatService {
+public class TwitchService extends AbstractChatService<TwitchMessage> {
 
     public TwitchService() {
         super("twitch");
@@ -22,7 +20,7 @@ public class TwitchService extends ChatService {
     }
     
     @Override
-    protected ChatSource createSource() {
+    protected TwitchSource createSource() {
         TwitchRequestHelper helper = new TwitchRequestHelper(new ObjectMapper(), getData().getToken());
         return new TwitchSource(helper);
     }

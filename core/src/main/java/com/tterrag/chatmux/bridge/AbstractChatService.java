@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.sql.rowset.CachedRowSet;
-
 import org.pf4j.ExtensionPoint;
 
 import com.electronwill.nightconfig.core.conversion.Converter;
@@ -19,7 +17,10 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.tterrag.chatmux.config.ServiceConfig;
+import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatService;
+import com.tterrag.chatmux.api.bridge.ChatSource;
+import com.tterrag.chatmux.api.config.ServiceConfig;
 
 import lombok.Getter;
 import reactor.core.publisher.Mono;
@@ -28,17 +29,17 @@ import reactor.util.annotation.Nullable;
 
 @JsonSerialize(using = Serializer.class)
 @JsonDeserialize(using = Deserializer.class)
-public abstract class ChatService implements ExtensionPoint {
+public abstract class AbstractChatService<M extends ChatMessage<M>> implements ChatService<M>, ExtensionPoint {
 
-    private static final Map<String, ChatService> types = new HashMap<>();
+    private static final Map<String, AbstractChatService<?>> types = new HashMap<>();
     
-    private ChatSource source;
+    private ChatSource<M> source;
     
     @Getter
     @NonNull
     private final String name;
     
-    protected ChatService(String name) {
+    protected AbstractChatService(String name) {
         this.name = name.toLowerCase(Locale.ROOT);
         types.put(this.name, this);
     }
@@ -47,15 +48,15 @@ public abstract class ChatService implements ExtensionPoint {
         source = createSource();
     }
     
-    public final ChatSource getSource() {
-        final ChatSource source = this.source;
+    public final ChatSource<M> getSource() {
+        final ChatSource<M> source = this.source;
         if (source == null) {
             throw new IllegalStateException("Source not created");
         }   
         return source;
     }
     
-    protected abstract ChatSource createSource();
+    protected abstract ChatSource<M> createSource();
     
     public abstract @Nullable ServiceConfig<?> getConfig();
     
@@ -69,38 +70,38 @@ public abstract class ChatService implements ExtensionPoint {
     }
 
     @Nullable
-    public static final ChatService byName(@Nullable String name) {
+    public static final AbstractChatService<?> byName(@Nullable String name) {
         return name == null ? null : types.get(name.toLowerCase(Locale.ROOT));
     }
 
-    public static class Conv implements Converter<ChatService, String> {
+    public static class Conv implements Converter<ChatService<?>, String> {
 
         @Override
-        public @Nullable ChatService convertToField(@Nullable String value) {
+        public @Nullable ChatService<?> convertToField(@Nullable String value) {
             return byName(value);
         }
 
         @Override
-        public String convertFromField(@SuppressWarnings("null") ChatService value) {
-            return value.name;
+        public String convertFromField(@SuppressWarnings("null") ChatService<?> value) {
+            return value.getName();
         }
     }
 }
 
-class Serializer extends JsonSerializer<ChatService> {
+class Serializer extends JsonSerializer<ChatService<?>> {
 
     @SuppressWarnings("null")
     @Override
-    public void serialize(ChatService value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    public void serialize(ChatService<?> value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeString(value.getName());
     }
 }
 
-class Deserializer extends JsonDeserializer<ChatService> {
+class Deserializer extends JsonDeserializer<ChatService<?>> {
 
     @SuppressWarnings("null")
     @Override
-    public @Nullable ChatService deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-        return ChatService.byName(p.getValueAsString());
+    public @Nullable ChatService<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        return AbstractChatService.byName(p.getValueAsString());
     }
 }

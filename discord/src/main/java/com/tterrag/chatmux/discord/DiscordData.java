@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.electronwill.nightconfig.core.conversion.Path;
-import com.tterrag.chatmux.config.ServiceData;
+import com.tterrag.chatmux.api.config.ServiceData;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

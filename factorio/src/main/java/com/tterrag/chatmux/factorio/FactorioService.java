@@ -2,9 +2,8 @@ package com.tterrag.chatmux.factorio;
 
 import org.pf4j.Extension;
 
-import com.tterrag.chatmux.bridge.ChatService;
-import com.tterrag.chatmux.bridge.ChatSource;
-import com.tterrag.chatmux.config.ServiceConfig;
+import com.tterrag.chatmux.api.config.ServiceConfig;
+import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
 
 import lombok.AccessLevel;
@@ -12,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Extension
-public class FactorioService extends ChatService {
+public class FactorioService extends AbstractChatService<FactorioMessage> {
     
     public FactorioService() {
         super("factorio");
@@ -20,7 +19,7 @@ public class FactorioService extends ChatService {
     }
     
     @Override
-    protected ChatSource createSource() {
+    protected FactorioSource createSource() {
         return new FactorioSource();
     }
     

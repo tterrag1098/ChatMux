@@ -1,6 +1,6 @@
 package com.tterrag.chatmux.mixer;
 
-import com.tterrag.chatmux.bridge.ChatMessage;
+import com.tterrag.chatmux.bridge.AbstractChatMessage;
 import com.tterrag.chatmux.mixer.event.MixerEvent;
 import com.tterrag.chatmux.mixer.method.MixerMethod;
 import com.tterrag.chatmux.mixer.method.MixerMethod.MethodType;
@@ -9,7 +9,7 @@ import com.tterrag.chatmux.websocket.WebSocketClient;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
-public class MixerMessage extends ChatMessage {
+public class MixerMessage extends AbstractChatMessage<MixerMessage> {
     
     private final MixerRequestHelper helper;
     private final WebSocketClient<?, MixerMethod> client;

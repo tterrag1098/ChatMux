@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 import org.reactivestreams.Publisher;
 
-import com.tterrag.chatmux.bridge.ChatMessage;
+import com.tterrag.chatmux.bridge.AbstractChatMessage;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.object.entity.Channel;
@@ -26,7 +26,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-public class DiscordMessage extends ChatMessage {
+public class DiscordMessage extends AbstractChatMessage<DiscordMessage> {
     
     static final Pattern CHANNEL_MENTION = Pattern.compile("<#(\\d+)>");
     static final Pattern USER_MENTION = Pattern.compile("<@!?(\\d+)>");

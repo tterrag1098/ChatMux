@@ -1,5 +1,6 @@
 ext {
     versions = [
+        reactor      : '3.2.9.RELEASE',
         reactorNetty : '0.8.8.RELEASE',
         jackson      : '2.9.8',
         d4j          : '3.0.7',
@@ -19,6 +20,7 @@ ext {
         emoji4j   : '5.0'
     ]
     libs = [
+        reactor      : "io.projectreactor:reactor-core:$versions.reactor",
         reactorNetty : "io.projectreactor.netty:reactor-netty:$versions.reactorNetty",
         jackson      : "com.fasterxml.jackson.core:jackson-databind:$versions.jackson",
         d4j          : "com.discord4j.discord4j:discord4j-core:$versions.d4j",

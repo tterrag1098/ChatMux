@@ -2,9 +2,8 @@ package com.tterrag.chatmux.discord;
 
 import org.pf4j.Extension;
 
-import com.tterrag.chatmux.bridge.ChatService;
-import com.tterrag.chatmux.bridge.ChatSource;
-import com.tterrag.chatmux.config.ServiceConfig;
+import com.tterrag.chatmux.api.config.ServiceConfig;
+import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
 import com.tterrag.chatmux.links.LinkManager;
 
@@ -13,8 +12,6 @@ import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
-import discord4j.gateway.json.GatewayPayload;
-import discord4j.gateway.json.dispatch.Dispatch;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +21,7 @@ import reactor.core.scheduler.Schedulers;
 
 @Extension
 @Slf4j
-public class DiscordService extends ChatService {
+public class DiscordService extends AbstractChatService<DiscordMessage> {
     
     @Getter
     public static Mono<User> botUser = Mono.empty();
@@ -54,7 +51,7 @@ public class DiscordService extends ChatService {
     }
     
     @Override
-    protected ChatSource createSource() {
+    protected DiscordSource createSource() {
         return new DiscordSource(getData().getToken());
     }
     

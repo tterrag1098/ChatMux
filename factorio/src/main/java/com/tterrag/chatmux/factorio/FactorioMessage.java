@@ -1,10 +1,10 @@
 package com.tterrag.chatmux.factorio;
 
-import com.tterrag.chatmux.bridge.ChatMessage;
+import com.tterrag.chatmux.bridge.AbstractChatMessage;
 
 import reactor.core.publisher.Mono;
 
-public class FactorioMessage extends ChatMessage {
+public class FactorioMessage extends AbstractChatMessage<FactorioMessage> {
     boolean action;
     
     public FactorioMessage(String username, String team, String message, boolean action) {

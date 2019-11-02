@@ -1,6 +1,6 @@
 package com.tterrag.chatmux.factorio;
 
-import com.tterrag.chatmux.config.ServiceData;
+import com.tterrag.chatmux.api.config.ServiceData;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

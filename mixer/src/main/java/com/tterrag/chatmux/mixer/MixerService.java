@@ -3,19 +3,16 @@ package com.tterrag.chatmux.mixer;
 import org.pf4j.Extension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tterrag.chatmux.bridge.ChatService;
-import com.tterrag.chatmux.bridge.ChatSource;
-import com.tterrag.chatmux.config.ServiceConfig;
+import com.tterrag.chatmux.api.config.ServiceConfig;
+import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
-import com.tterrag.chatmux.mixer.event.MixerEvent;
-import com.tterrag.chatmux.mixer.method.MixerMethod;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
 @Extension
-public class MixerService extends ChatService {
+public class MixerService extends AbstractChatService<MixerMessage> {
 
     public MixerService() {
         super("mixer");
@@ -23,7 +20,7 @@ public class MixerService extends ChatService {
     }
     
     @Override
-    protected ChatSource createSource() {
+    protected MixerSource createSource() {
         MixerRequestHelper helper = new MixerRequestHelper(new ObjectMapper(), getData().getClientId(), getData().getToken());
         return new MixerSource(helper);
     }
