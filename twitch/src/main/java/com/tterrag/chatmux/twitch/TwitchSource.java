@@ -3,6 +3,7 @@ package com.tterrag.chatmux.twitch;
 import java.util.Locale;
 import java.util.function.Function;
 
+import com.google.common.collect.ImmutableMap;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatSource;
 import com.tterrag.chatmux.twitch.irc.IRCEvent;
@@ -60,10 +61,12 @@ public class TwitchSource implements ChatSource<TwitchMessage> {
     }
     
     @Override
-    public Mono<Void> send(String channel, ChatMessage<?> message, boolean raw) {
+    public Mono<TwitchMessage> send(String channel, ChatMessage<?> message, boolean raw) {
+        String content = raw ? message.getContent() : message.toString();
+        String username = TwitchService.getInstance().getData().getNick();
         return Mono.just(twitch.outbound())
-                .doOnNext(sink -> sink.next("PRIVMSG #" + channel.toLowerCase(Locale.ROOT) + " :" + (raw ? message.getContent() : message)))
-                .then();
+                .doOnNext(sink -> sink.next("PRIVMSG #" + channel.toLowerCase(Locale.ROOT) + " :" + content))
+                .thenReturn(new TwitchMessage(twitch, new IRCEvent.Message(ImmutableMap.of(), username, channel, content), channel, username, null)); // TODO have a second websocket reading our own message events
     }
 
     @Override

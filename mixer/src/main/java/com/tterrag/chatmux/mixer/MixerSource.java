@@ -11,6 +11,7 @@ import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatSource;
 import com.tterrag.chatmux.mixer.event.MixerEvent;
 import com.tterrag.chatmux.mixer.event.ReplyEvent;
+import com.tterrag.chatmux.mixer.event.reply.MessageReply;
 import com.tterrag.chatmux.mixer.method.MixerMethod;
 import com.tterrag.chatmux.mixer.method.MixerMethod.MethodType;
 import com.tterrag.chatmux.mixer.response.ChatResponse;
@@ -41,6 +42,8 @@ public class MixerSource implements ChatSource<MixerMessage> {
     private final Map<Integer, MethodType> sentMethods = new ConcurrentHashMap<>();
     @NonNull // It also sends us message events for messages WE sent (unlike twitch), so, more special handling
     private final Set<UUID> sentMessages = Sets.newConcurrentHashSet();
+    
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public MixerService getType() {
@@ -72,16 +75,19 @@ public class MixerSource implements ChatSource<MixerMessage> {
     }
     
     @Override
-    public Mono<Void> send(String channel, ChatMessage<?> message, boolean raw) {
+    public Mono<MixerMessage> send(String channel, ChatMessage<?> message, boolean raw) {
         return getClient(channel)
                 .doOnNext(client -> client.outbound().next(new MixerMethod(MethodType.MESSAGE, (raw ? message.getContent() : message.toString()))
                         .saveId(sentMethods::put)))
                 .flatMapMany(WebSocketClient::inbound)
                 .ofType(ReplyEvent.class)
                 .filter(re -> getMethodType(re.id) == MethodType.MESSAGE)
-                .doOnNext(re -> sentMessages.add(UUID.fromString(re.data.get("id").asText())))
+                .next()
+                .map(re -> re.getData(mapper, MessageReply.class))
+                .doOnNext(m -> sentMessages.add(m.id))
                 .doOnError(t -> log.error("Failed to send to mixer", t))
-                .then();
+                .flatMap(m -> getClient(channel).zipWith(helper.getChannel(m.userId).flatMap(c -> helper.getUser(c.userId)), 
+                        (client, c) -> new MixerMessage(helper, client, m, c.username)));
     }
     
     private Mono<WebSocketClient<MixerEvent, MixerMethod>> getClient(String channel) {

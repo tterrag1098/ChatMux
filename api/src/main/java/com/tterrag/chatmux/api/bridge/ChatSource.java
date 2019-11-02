@@ -17,7 +17,7 @@ public interface ChatSource<M extends ChatMessage<M>> {
 
     Flux<M> connect(String channel);
     
-    Mono<Void> send(String channel, ChatMessage<?> payload, boolean raw);
+    Mono<M> send(String channel, ChatMessage<?> payload, boolean raw);
             
     void disconnect(String channel);
 }

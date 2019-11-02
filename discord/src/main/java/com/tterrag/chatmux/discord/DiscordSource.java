@@ -88,7 +88,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     }
     
     @Override
-    public Mono<Void> send(String channelName, ChatMessage<?> m, boolean raw) {
+    public Mono<DiscordMessage> send(String channelName, ChatMessage<?> m, boolean raw) {
         InputStream in = Main.class.getResourceAsStream("/logo.png");
         if (in == null) {
             throw new RuntimeException("Resource not found: logo.png");
@@ -112,7 +112,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
                             .next()
                             .flatMap(mra -> mra.getMessage().flatMap(Message::delete).and(t.getT1().delete()).thenReturn(t.getT2()))
                             .switchIfEmpty(Mono.justOrEmpty(client.getSelfId()).flatMap(u -> t.getT2().removeReaction(ReactionEmoji.unicode(ADMIN_EMOTE), u)).thenReturn(t.getT2())))
-                    .then();
+                    .flatMap(msg -> DiscordMessage.create(client, msg));
     }
 
     private Mono<String> discordify(Snowflake channel, ChatMessage<?> msg) {
