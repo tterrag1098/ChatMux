@@ -1,6 +1,7 @@
 package com.tterrag.chatmux.mixer.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import lombok.ToString;
 
@@ -10,7 +11,7 @@ public class ReplyEvent extends MixerEvent {
     
     public String error;
     
-    public Object data;
+    public JsonNode data;
     
     public int id;
 

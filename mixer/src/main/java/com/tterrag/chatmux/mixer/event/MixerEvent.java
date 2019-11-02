@@ -25,6 +25,8 @@ public class MixerEvent {
                 String event = data.get("event").asText();
                 if (event.equals("ChatMessage")) {
                     return om.readValue(om.writeValueAsString(data.get("data")), Message.class);
+                } else if (event.equals("WelcomeEvent")) {
+                    return om.readValue(om.writeValueAsString(data.get("data")), Welcome.class);
                 }
             }
         } catch (IOException e) {
@@ -49,6 +51,13 @@ public class MixerEvent {
         public int userId;
         
         public com.tterrag.chatmux.mixer.event.object.Message message;
+    }
+    
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @ToString
+    public static class Welcome extends MixerEvent {
+        
+        public UUID server;
     }
     
     @ToString

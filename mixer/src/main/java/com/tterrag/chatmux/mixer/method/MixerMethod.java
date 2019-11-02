@@ -1,6 +1,7 @@
 package com.tterrag.chatmux.mixer.method;
 
 import java.util.Arrays;
+import java.util.function.BiConsumer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -9,9 +10,7 @@ import com.google.common.base.Preconditions;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 
-@ToString
 public class MixerMethod {
     
     private static int idCounter = 0;
@@ -50,5 +49,10 @@ public class MixerMethod {
         Preconditions.checkArgument(args.length <= method.requiredArgs + method.optionalArgs, "Cannot supply more than %d arguments for type %s", method.requiredArgs + method.optionalArgs, method);
         this.args = Arrays.copyOf(args, args.length);
         this.id = idCounter++;
+    }
+
+    public MixerMethod saveId(BiConsumer<Integer, MethodType> consumer) {
+        consumer.accept(this.id, this.method);
+        return this;
     }
 }
