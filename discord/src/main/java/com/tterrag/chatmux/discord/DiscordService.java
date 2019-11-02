@@ -56,15 +56,15 @@ public class DiscordService extends AbstractChatService<DiscordMessage> {
     }
     
     @Override
-    public Mono<Void> runInterface() {
+    public Mono<Void> runInterface(LinkManager manager) {
         DiscordClient discord = ((DiscordSource)getSource()).getClient();
         
-        final DiscordCommandHandler commands = new DiscordCommandHandler();
+        final DiscordCommandHandler commands = new DiscordCommandHandler(manager);
         
         botUser = discord.getEventDispatcher()
                 .on(ReadyEvent.class)
                 .publishOn(Schedulers.elastic())
-                .doOnNext(r -> LinkManager.INSTANCE.readLinks())
+                .doOnNext(r -> manager.readLinks())
                 .map(e -> e.getSelf())
                 .next()
                 .cache();

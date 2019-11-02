@@ -18,6 +18,8 @@ import reactor.util.function.Tuple2;
 @Slf4j
 public class DiscordCommandHandler {
     
+    private final LinkManager manager;
+    
     private Mono<ChatChannelImpl<?>> getChannel(String input) {
         String[] data = input.split("/");
         if (data.length != 2) {
@@ -42,9 +44,8 @@ public class DiscordCommandHandler {
             
             final boolean raw = args[0].equals("+linkraw");
 
-            return sources.flatMap(t -> connect(t.getT1(), t.getT2(), raw)
-                            .doOnNext(s -> LinkManager.INSTANCE.addLink(t.getT1(), t.getT2(), raw, s))
-                            .thenReturn(t))
+            return sources
+                   .doOnNext(t -> manager.addLink(t.getT1(), t.getT2(), raw, manager.connect(t.getT1(), t.getT2(), raw)))
                    .flatMap(t -> channel.createMessage("Link established! " + t.getT1() + " -> " + t.getT2()))
                    .doOnError(t -> log.error("Exception establishing link", t))
                    .onErrorResume(IllegalArgumentException.class, e -> channel.createMessage(e.getMessage()))
@@ -56,7 +57,7 @@ public class DiscordCommandHandler {
             Mono<Tuple2<ChatChannel<?>, ChatChannel<?>>> sources = Mono.zip(from, to);
 
             return sources.flatMap(t -> {
-                       if (LinkManager.INSTANCE.removeLink(t.getT1(), t.getT2())) {
+                       if (manager.removeLink(t.getT1(), t.getT2())) {
                            return channel.createMessage("Link broken! " + t.getT1() + " -/> " + t.getT2());
                        } else {
                            return channel.createMessage("No such link to remove");
@@ -66,16 +67,11 @@ public class DiscordCommandHandler {
                    .onErrorResume(IllegalArgumentException.class, m -> channel.createMessage(m.toString()));
         } else if (args[0].equals("~links")) {
             StringBuilder msg = new StringBuilder();
-            for (Link link : LinkManager.INSTANCE.getLinks()) {
+            for (Link link : manager.getLinks()) {
                  msg.append(link).append("\n");
             }
             return channel.createMessage(msg.length() == 0 ? "No links!" : msg.toString());
         }
         return Mono.empty();
-    }
-    
-    public static Mono<Disposable> connect(ChatChannel<?> from, ChatChannel<?> to, boolean raw) {
-        return Mono.just(to.getService().getSource())
-                .map(s -> from.connect().flatMap(m -> s.send(to.getName(), m, raw)).subscribe());
     }
 }

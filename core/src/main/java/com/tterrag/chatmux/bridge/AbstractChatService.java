@@ -21,6 +21,7 @@ import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.bridge.ChatSource;
 import com.tterrag.chatmux.api.config.ServiceConfig;
+import com.tterrag.chatmux.links.LinkManager;
 
 import lombok.Getter;
 import reactor.core.publisher.Mono;
@@ -60,7 +61,7 @@ public abstract class AbstractChatService<M extends ChatMessage<M>> implements C
     
     public abstract @Nullable ServiceConfig<?> getConfig();
     
-    public Mono<Void> runInterface() {
+    public Mono<Void> runInterface(LinkManager manager) {
         throw new UnsupportedOperationException("Service '" + name + "' cannot be used as main");
     }
     

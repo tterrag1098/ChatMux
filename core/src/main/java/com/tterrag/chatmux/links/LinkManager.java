@@ -15,33 +15,31 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.fasterxml.jackson.databind.util.Converter;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.tterrag.chatmux.api.bridge.ChatChannel;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatService;
+import com.tterrag.chatmux.api.wiretap.WiretapPlugin;
 import com.tterrag.chatmux.bridge.ChatChannelImpl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
+import reactor.util.annotation.NonNull;
 import reactor.util.annotation.Nullable;
 
-public enum LinkManager {
-    
-    INSTANCE;
+@Slf4j
+public class LinkManager {
     
     @Value
-    @JsonDeserialize(converter = LinkConverter.class)
     @RequiredArgsConstructor
     public static class Link {
         
@@ -64,31 +62,6 @@ public enum LinkManager {
         }
     }
     
-    @Slf4j
-    private static class LinkConverter implements Converter<Link, Link> {
-
-        @Override
-        public Link convert(@SuppressWarnings("null") Link value) {
-            Disposable sub = value.getFrom().connect()
-                    .flatMap(m -> value.getTo().getService().getSource().send(value.getTo().getName(), m, value.isRaw()))
-                    .doOnError(t -> log.error("Exception processing message", t))
-                    .subscribe();
-            return new Link(value.getFrom(), value.getTo(), value.isRaw(), sub);
-        }
-
-        @SuppressWarnings("null")
-        @Override
-        public JavaType getInputType(TypeFactory typeFactory) {
-            return TypeFactory.defaultInstance().constructType(Link.class);
-        }
-
-        @SuppressWarnings("null")
-        @Override
-        public JavaType getOutputType(TypeFactory typeFactory) {
-            return TypeFactory.defaultInstance().constructType(Link.class);
-        }
-    }
-    
     @Value
     private static class MessageKey {
         
@@ -98,6 +71,9 @@ public enum LinkManager {
     }
     
     private final Map<ChatService<?>, Multimap<String, Link>> links = new HashMap<>();
+    
+    @NonNull
+    private final List<WiretapPlugin> callbacks;
         
     private final LoadingCache<MessageKey, List<ChatMessage<?>>> messageCache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).recordStats().build(new CacheLoader<MessageKey, List<ChatMessage<?>>>() {
         @Override
@@ -105,6 +81,10 @@ public enum LinkManager {
             return new ArrayList<>();
         }
     });
+    
+    public LinkManager(Collection<WiretapPlugin> callbacks) {
+        this.callbacks = ImmutableList.copyOf(callbacks);
+    }
 
     private void saveLinks() {
         List<Link> allLinks = getLinks();
@@ -120,11 +100,26 @@ public enum LinkManager {
             File file = new File("links.json");
             if (file.exists()) {
                 List<Link> allLinks = new ObjectMapper().readValue(new File("links.json"), new TypeReference<List<Link>>() {});
-                allLinks.forEach(this::addLink);
+                allLinks.stream()
+                    .map(this::connect)
+                    .forEach(this::addLink);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    private Link connect(Link unconnected) {
+        return new Link(unconnected.getFrom(), unconnected.getTo(), unconnected.isRaw(),
+                connect(unconnected.getFrom(), unconnected.getTo(), unconnected.isRaw())); 
+    }
+    
+    public Disposable connect(ChatChannel<?> from, ChatChannel<?> to, boolean raw) {
+        return from.connect()
+                .flatMap(m -> Flux.fromIterable(callbacks).flatMap(c -> c.onMessage(m)).then().thenReturn(m))
+                .flatMap(m -> to.getService().getSource().send(to.getName(), m, raw))
+                .doOnError(t -> log.error("Exception processing message", t))
+                .subscribe();
     }
     
     public void addLink(ChatChannelImpl<?> from, ChatChannelImpl<?> to, boolean raw, Disposable subscriber) {

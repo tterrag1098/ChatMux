@@ -102,7 +102,6 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
         final String username = usercheck;
         return helper.getWebhook(channel, "ChatMux", in)
                     .flatMap(wh -> discordify(channel, m).flatMap(msg -> helper.executeWebhook(wh, new WebhookMessage(msg, username, m.getAvatar()).toString()))).map(r -> Tuples.of(m, r))
-                    .flatMap(t -> client.getChannelById(channel).flatMap(c -> DiscordMessage.create(client, t.getT2()).doOnNext(msg -> LinkManager.INSTANCE.linkMessage(t.getT1(), msg))).thenReturn(t))
                     .filter(t -> (!Main.cfg.getModerators().isEmpty() || !Main.cfg.getAdmins().isEmpty()) && DiscordService.getInstance().getData().getModerationChannels().contains(t.getT2().getChannelId().asLong()))
                     .flatMap(t -> t.getT2().addReaction(ReactionEmoji.unicode(ADMIN_EMOTE)).thenReturn(t))
                     .flatMap(t -> client.getEventDispatcher().on(ReactionAddEvent.class)
