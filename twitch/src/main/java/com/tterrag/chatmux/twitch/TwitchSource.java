@@ -53,10 +53,9 @@ public class TwitchSource implements ChatSource {
         
         Flux<ChatMessage> messageRelay = twitch.inbound().ofType(IRCEvent.Message.class)
             .filter(e -> e.getChannel().equals(lcChan))
-            .flatMap(e -> helper.getUsers(e.getUser())
-                                .flatMapMany(Flux::fromArray)
-                                .next()
-                                .map(u -> new TwitchMessage(twitch, e, u.displayName, u.avatarUrl)));
+            .flatMap(e -> helper.getUser(e.getUser())
+                                .zipWith(helper.getUser(e.getChannel()),
+                                        (u, c) -> new TwitchMessage(twitch, e, c.displayName, u.displayName, u.avatarUrl)));
         
         return Flux.merge(pingPong, messageRelay).ofType(ChatMessage.class);
     }

@@ -11,8 +11,8 @@ public class TwitchMessage extends ChatMessage {
     private final WebSocketClient<?, String> client;
     private final IRCEvent.Message message;
 
-    public TwitchMessage(WebSocketClient<?, String> client, IRCEvent.Message message, String displayname, String avatar) {
-        super(TwitchService.getInstance(), message.getChannel(), displayname, message.getContent(), avatar);
+    public TwitchMessage(WebSocketClient<?, String> client, IRCEvent.Message message, String channelName, String displayname, String avatar) {
+        super(TwitchService.getInstance(), channelName, displayname, message.getContent(), avatar);
         this.client = client;
         this.message = message;
     }

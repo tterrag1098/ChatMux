@@ -12,6 +12,7 @@ import com.tterrag.chatmux.util.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -31,15 +32,23 @@ public class TwitchRequestHelper extends RequestHelper {
         headers.add("User-Agent", "TwitchBot (https://tropicraft.net, 1.0)");
     }
     
-    public Mono<UserResponse[]> getUsers(int... ids) {
+    public Mono<UserResponse> getUser(int id) {
+        return getUsers(id).next();
+    }
+    
+    public Flux<UserResponse> getUsers(int... ids) {
         return getUsers(ids, new String[0]);
     }
     
-    public Mono<UserResponse[]> getUsers(String... logins) {
+    public Mono<UserResponse> getUser(String login) {
+        return getUsers(login).next();
+    }
+    
+    public Flux<UserResponse> getUsers(String... logins) {
         return getUsers(new int[0], logins);
     }
     
-    public Mono<UserResponse[]> getUsers(int[] ids, String[] logins) {
+    public Flux<UserResponse> getUsers(int[] ids, String[] logins) {
         String args = "?" + 
             Stream.concat(
                         Arrays.stream(ids).mapToObj(Integer::toString).map(s -> "id=" + s),
@@ -54,7 +63,8 @@ public class TwitchRequestHelper extends RequestHelper {
                     } catch (IOException e) {
                         throw new IllegalArgumentException("Error reading JSON", e);
                     }
-                });
+                })
+                .flatMapMany(Flux::fromArray);
     }
     
 //    public TokenResponse getToken() {
