@@ -131,9 +131,11 @@ public class FrameParser<I, O> implements ConnectionObserver {
                 if (closeStatus != null) {
                     log.debug("Forwarding close reason: {}", closeStatus);
                     log.debug("Triggering error sequence ({})", new CloseException(closeStatus).toString());
-                    outboundExchange.onNext(null);
-                    log.debug("Preparing to complete outbound exchange after error");
-                    outboundExchange.onComplete();                             }
+                    outboundExchange.onError(new CloseException(closeStatus));
+                } else {
+                    log.debug("Receiver completed without close status");
+                    outboundExchange.onComplete();
+                }
             })
             .then()
             .log(log.getName() + ".in");
