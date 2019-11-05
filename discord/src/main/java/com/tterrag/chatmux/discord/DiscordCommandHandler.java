@@ -1,5 +1,7 @@
 package com.tterrag.chatmux.discord;
 
+import java.util.stream.Collectors;
+
 import com.tterrag.chatmux.api.bridge.ChatChannel;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.bridge.ChatChannelImpl;
@@ -10,7 +12,7 @@ import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
@@ -25,12 +27,12 @@ public class DiscordCommandHandler {
         if (data.length != 2) {
             return Mono.error(new IllegalArgumentException("Link must be in the format `service/channel`"));
         }
-        AbstractChatService<?> type = AbstractChatService.byName(data[0]);
+        AbstractChatService<?, ?> type = AbstractChatService.byName(data[0]);
         if (type == null) {
             return Mono.error(new IllegalArgumentException("Invalid service name"));
         }
         return Mono.just(data[1])
-                .flatMap(s -> type.getSource().parseChannel(s))
+                .flatMap(s -> type.parseChannel(s))
                 .map(name -> new ChatChannelImpl<>(name, type));
     }
 
@@ -66,11 +68,10 @@ public class DiscordCommandHandler {
                    .doOnError(t -> log.error("Exception removing link", t))
                    .onErrorResume(IllegalArgumentException.class, m -> channel.createMessage(m.toString()));
         } else if (args[0].equals("~links")) {
-            StringBuilder msg = new StringBuilder();
-            for (Link link : manager.getLinks()) {
-                 msg.append(link).append("\n");
-            }
-            return channel.createMessage(msg.length() == 0 ? "No links!" : msg.toString());
+            return Flux.fromIterable(manager.getLinks())
+                    .flatMap(Link::prettyPrint)
+                    .collect(Collectors.joining("\n"))
+                    .flatMap(msg -> channel.createMessage(msg.length() == 0 ? "No links!" : msg.toString()));
         }
         return Mono.empty();
     }

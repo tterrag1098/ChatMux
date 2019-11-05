@@ -1,11 +1,13 @@
 package com.tterrag.chatmux;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 
+import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.config.ServiceConfig;
 import com.tterrag.chatmux.api.config.ServiceData;
 import com.tterrag.chatmux.api.wiretap.WiretapPlugin;
@@ -17,7 +19,6 @@ import com.tterrag.chatmux.links.LinkManager;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
-import reactor.util.annotation.NonNull;
 import reactor.util.annotation.Nullable;
 
 @Slf4j
@@ -30,12 +31,13 @@ public class Main {
     }
     
     public static Mono<Void> start(@Nullable Path pluginRoot) {
-        PluginManager pluginManager = new DefaultPluginManager(pluginRoot);
+        PluginManager pluginManager = new DefaultPluginManager(pluginRoot == null ? Paths.get("plugins") : pluginRoot);
+        log.info("Using plugin folder: " + pluginManager.getPluginsRoot().toAbsolutePath());
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
 
         @SuppressWarnings({ "rawtypes", "unchecked" })
-        List<AbstractChatService<?>> services = (List) pluginManager.getExtensions(AbstractChatService.class);
+        List<ChatService<?>> services = (List) pluginManager.getExtensions(AbstractChatService.class);
         log.info("Loaded services: {}", services);
 
         // Load config after plugins so that AbstractChatService converter works
@@ -43,7 +45,7 @@ public class Main {
         cfgReader.load();
         cfg = cfgReader.getData();
         
-        for (AbstractChatService<?> service : services) {
+        for (ChatService<?> service : services) {
             log.info("Connecting to service: {}", service);
             @SuppressWarnings("unchecked") 
             ServiceConfig<ServiceData> config = (ServiceConfig<ServiceData>) service.getConfig();
@@ -54,7 +56,7 @@ public class Main {
         
         Hooks.onOperatorDebug();
         
-        services.forEach(AbstractChatService::initialize);
+        services.forEach(ChatService::initialize);
         
         List<WiretapPlugin> wiretaps = pluginManager.getExtensions(WiretapPlugin.class);
         log.info("Loaded wiretaps: {}", wiretaps);

@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Extension
-public class FactorioService extends AbstractChatService<FactorioMessage> {
+public class FactorioService extends AbstractChatService<FactorioMessage, FactorioSource> {
     
     public FactorioService() {
         super("factorio");

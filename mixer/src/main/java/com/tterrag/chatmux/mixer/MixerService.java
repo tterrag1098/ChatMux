@@ -10,9 +10,10 @@ import com.tterrag.chatmux.config.SimpleServiceConfig;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import reactor.core.publisher.Mono;
 
 @Extension
-public class MixerService extends AbstractChatService<MixerMessage> {
+public class MixerService extends AbstractChatService<MixerMessage, MixerSource> {
 
     public MixerService() {
         super("mixer");
@@ -42,5 +43,22 @@ public class MixerService extends AbstractChatService<MixerMessage> {
             throw new IllegalStateException("Mixer service not initialized");
         }
         return inst;
+    }
+    
+    @Override
+    public Mono<String> parseChannel(String channel) {
+        return Mono.fromSupplier(() -> Integer.parseInt(channel))
+                .map(Object::toString)
+                .onErrorResume(NumberFormatException.class, $ -> getSource().getHelper()
+                        .getChannel(channel)
+                        .map(c -> Integer.toString(c.id)));
+    }
+    
+    @Override
+    public Mono<String> prettifyChannel(String channel) {
+        return getSource().getHelper()
+                .getChannel(channel)
+                .flatMap(c -> getSource().getHelper().getUser(c.userId))
+                .map(u -> u.username);
     }
 }

@@ -30,11 +30,11 @@ import reactor.util.annotation.Nullable;
 
 @JsonSerialize(using = Serializer.class)
 @JsonDeserialize(using = Deserializer.class)
-public abstract class AbstractChatService<M extends ChatMessage<M>> implements ChatService<M>, ExtensionPoint {
+public abstract class AbstractChatService<M extends ChatMessage<M>, S extends ChatSource<M>> implements ChatService<M>, ExtensionPoint {
 
-    private static final Map<String, AbstractChatService<?>> types = new HashMap<>();
+    private static final Map<String, AbstractChatService<?, ?>> types = new HashMap<>();
     
-    private ChatSource<M> source;
+    private S source;
     
     @Getter
     @NonNull
@@ -49,15 +49,15 @@ public abstract class AbstractChatService<M extends ChatMessage<M>> implements C
         source = createSource();
     }
     
-    public final ChatSource<M> getSource() {
-        final ChatSource<M> source = this.source;
+    public final S getSource() {
+        final S source = this.source;
         if (source == null) {
             throw new IllegalStateException("Source not created");
         }   
         return source;
     }
     
-    protected abstract ChatSource<M> createSource();
+    protected abstract S createSource();
     
     public abstract @Nullable ServiceConfig<?> getConfig();
     
@@ -71,7 +71,7 @@ public abstract class AbstractChatService<M extends ChatMessage<M>> implements C
     }
 
     @Nullable
-    public static final AbstractChatService<?> byName(@Nullable String name) {
+    public static final AbstractChatService<?, ?> byName(@Nullable String name) {
         return name == null ? null : types.get(name.toLowerCase(Locale.ROOT));
     }
 

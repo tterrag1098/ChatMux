@@ -1,5 +1,7 @@
 package com.tterrag.chatmux.discord;
 
+import java.util.regex.Matcher;
+
 import org.pf4j.Extension;
 
 import com.tterrag.chatmux.api.config.ServiceConfig;
@@ -10,8 +12,10 @@ import com.tterrag.chatmux.links.LinkManager;
 import discord4j.core.DiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.entity.GuildChannel;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.util.Snowflake;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +25,7 @@ import reactor.core.scheduler.Schedulers;
 
 @Extension
 @Slf4j
-public class DiscordService extends AbstractChatService<DiscordMessage> {
+public class DiscordService extends AbstractChatService<DiscordMessage, DiscordSource> {
     
     @Getter
     public static Mono<User> botUser = Mono.empty();
@@ -81,5 +85,22 @@ public class DiscordService extends AbstractChatService<DiscordMessage> {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> discord.logout().block()));
         
         return Mono.when(botUser, commandListener, discord.login());
+    }
+    
+    @Override
+    public Mono<String> parseChannel(String channel) {
+        return Mono.fromSupplier(() -> Long.parseLong(channel))
+                .thenReturn(channel)
+                .onErrorResume(NumberFormatException.class, t -> Mono.just(DiscordMessage.CHANNEL_MENTION.matcher(channel))
+                        .filter(Matcher::matches)
+                        .map(m -> m.group(1))
+                        .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("ChatChannelImpl must be a mention or ID"))));
+    }
+    
+    @Override
+    public Mono<String> prettifyChannel(String channel) {
+        return getSource().getClient().getChannelById(Snowflake.of(channel))
+                .cast(GuildChannel.class)
+                .map(c -> '#' + c.getName());
     }
 }

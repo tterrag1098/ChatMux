@@ -33,6 +33,7 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 import reactor.util.annotation.Nullable;
 
@@ -59,6 +60,12 @@ public class LinkManager {
         @Override
         public String toString() {
             return from + " -> " + to + (raw ? " (raw)" : "");
+        }
+        
+        public Mono<String> prettyPrint() {
+            return from.getService().prettifyChannel(from.getName())
+                    .zipWith(to.getService().prettifyChannel(to.getName()),
+                            (fromName, toName) -> from.getService().getName() + "/" + fromName + " -> " + to.getService().getName() + "/" + toName);
         }
     }
     
@@ -114,9 +121,9 @@ public class LinkManager {
                 connect(unconnected.getFrom(), unconnected.getTo(), unconnected.isRaw())); 
     }
     
-    public Disposable connect(ChatChannel<?> from, ChatChannel<?> to, boolean raw) {
+    public <M extends ChatMessage<M>> Disposable connect(ChatChannel<M> from, ChatChannel<?> to, boolean raw) {
         return from.connect()
-                .flatMap(m -> Flux.fromIterable(callbacks).flatMap(c -> c.onMessage(m)).then().thenReturn(m))
+                .flatMap(m -> Flux.fromIterable(callbacks).flatMap(c -> c.onMessage(m, from)).then().thenReturn(m))
                 .flatMap(m -> to.getService().getSource().send(to.getName(), m, raw))
                 .doOnError(t -> log.error("Exception processing message", t))
                 .subscribe();

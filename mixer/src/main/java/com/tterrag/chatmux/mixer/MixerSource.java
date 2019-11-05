@@ -20,6 +20,8 @@ import com.tterrag.chatmux.websocket.FrameParser;
 import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
 import com.tterrag.chatmux.websocket.WebSocketClient;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
@@ -32,6 +34,7 @@ import reactor.util.annotation.NonNull;
 public class MixerSource implements ChatSource<MixerMessage> {
     
     @NonNull
+    @Getter(AccessLevel.PACKAGE)
     private final MixerRequestHelper helper;
     
     @NonNull
@@ -48,16 +51,6 @@ public class MixerSource implements ChatSource<MixerMessage> {
     @Override
     public MixerService getType() {
         return MixerService.getInstance();
-    }
-    
-    @Override
-    public Mono<String> parseChannel(String channel) {
-        try {
-            Integer.parseInt(channel);
-            return Mono.just(channel);
-        } catch (NumberFormatException e) {
-            return helper.getChannel(channel).map(c -> c.id).map(c -> Integer.toString(c));
-        }
     }
     
     @Override

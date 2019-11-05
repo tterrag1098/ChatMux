@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Extension
-public class TwitchService extends AbstractChatService<TwitchMessage> {
+public class TwitchService extends AbstractChatService<TwitchMessage, TwitchSource> {
 
     public TwitchService() {
         super("twitch");

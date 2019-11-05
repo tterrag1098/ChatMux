@@ -15,10 +15,10 @@ public final class ChatChannelImpl<M extends ChatMessage<M>> implements ChatChan
     @Getter(onMethod = @__({@Override}))
     String name;
     @Getter(onMethod = @__({@Override}))
-    AbstractChatService<M> service;
+    AbstractChatService<M, ?> service;
     
     @JsonCreator
-    public ChatChannelImpl(@JsonProperty("name") String name, @JsonProperty("type") AbstractChatService<M> service) {
+    public ChatChannelImpl(@JsonProperty("name") String name, @JsonProperty("type") AbstractChatService<M, ?> service) {
         this.name = name;
         this.service = service;
     }

@@ -19,7 +19,6 @@ import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatSource;
 import com.tterrag.chatmux.discord.util.WebhookMessage;
-import com.tterrag.chatmux.links.LinkManager;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
@@ -62,23 +61,13 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     public DiscordService getType() {
         return DiscordService.getInstance();
     }
-    
-    @Override
-    public Mono<String> parseChannel(String channel) {
-        return Mono.fromSupplier(() -> Long.parseLong(channel))
-                .thenReturn(channel)
-                .onErrorResume(NumberFormatException.class, t -> Mono.just(DiscordMessage.CHANNEL_MENTION.matcher(channel))
-                        .filter(Matcher::matches)
-                        .map(m -> m.group(1))
-                        .switchIfEmpty(Mono.error(() -> new IllegalArgumentException("ChatChannelImpl must be a mention or ID"))));
-    }
 
     @Override
     public Flux<DiscordMessage> connect(String channel) {
         // Discord bots do not "join" channels so we only need to return the flux of messages
         return client.getEventDispatcher()
                 .on(MessageCreateEvent.class)
-                .filter(e -> e.getMember() != null)
+                .filter(e -> e.getMember().isPresent())
                 .filter(e -> e.getMessage().getChannelId().equals(Snowflake.of(channel)))
                 .filter(e -> e.getMessage().getAuthor().map(u -> !u.isBot()).orElse(true))
                 .filter(e -> e.getMessage().getContent().isPresent())
