@@ -52,9 +52,22 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     @NonNull
     private final DiscordRequestHelper helper;
     
+    @NonNull
+    private final Flux<DiscordMessage> messageSource;
+    
     DiscordSource(String token) {
         this.client = new DiscordClientBuilder(token).build();
         this.helper = new DiscordRequestHelper(client, token);
+        
+        this.messageSource = client.getEventDispatcher()
+                .on(MessageCreateEvent.class)
+                .filter(e -> e.getMember().isPresent())
+                .filter(e -> e.getMessage().getAuthor().map(u -> !u.isBot()).orElse(true))
+                .filter(e -> e.getMessage().getContent().isPresent())
+                .filter(e -> !TEMP_COMMAND_PATTERN.matcher(e.getMessage().getContent().get()).find())
+                .flatMap(e -> e.getMessage().getChannel().ofType(TextChannel.class).map(c -> Tuples.of(e, c)))
+                .flatMap(t -> DiscordMessage.create(client, t.getT1().getMessage()))
+                .share();
     }
 
     @Override
@@ -65,15 +78,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     @Override
     public Flux<DiscordMessage> connect(String channel) {
         // Discord bots do not "join" channels so we only need to return the flux of messages
-        return client.getEventDispatcher()
-                .on(MessageCreateEvent.class)
-                .filter(e -> e.getMember().isPresent())
-                .filter(e -> e.getMessage().getChannelId().equals(Snowflake.of(channel)))
-                .filter(e -> e.getMessage().getAuthor().map(u -> !u.isBot()).orElse(true))
-                .filter(e -> e.getMessage().getContent().isPresent())
-                .filter(e -> !TEMP_COMMAND_PATTERN.matcher(e.getMessage().getContent().get()).find())
-                .flatMap(e -> e.getMessage().getChannel().ofType(TextChannel.class).map(c -> Tuples.of(e, c)))
-                .flatMap(t -> DiscordMessage.create(client, t.getT1().getMessage()));
+        return messageSource.filter(m -> m.getChannelId().equals(channel));
     }
     
     @Override
