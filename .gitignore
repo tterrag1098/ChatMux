@@ -6,6 +6,7 @@ logs/
 chatmux.toml
 links.json
 *.factorypath
+**/plugins/*
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
