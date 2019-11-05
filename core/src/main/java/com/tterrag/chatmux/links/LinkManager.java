@@ -123,7 +123,7 @@ public class LinkManager {
     
     public <M extends ChatMessage<M>> Disposable connect(ChatChannel<M> from, ChatChannel<?> to, boolean raw) {
         return from.connect()
-                .flatMap(m -> Flux.fromIterable(callbacks).flatMap(c -> c.onMessage(m, from)).then().thenReturn(m))
+                .flatMap(m -> Flux.fromIterable(callbacks).flatMap(c -> c.onMessage(m, from, to)).then().thenReturn(m))
                 .flatMap(m -> to.getService().getSource().send(to.getName(), m, raw))
                 .doOnError(t -> log.error("Exception processing message", t))
                 .subscribe();
