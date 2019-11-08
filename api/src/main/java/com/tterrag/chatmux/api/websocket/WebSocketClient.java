@@ -1,4 +1,4 @@
-package com.tterrag.chatmux.websocket;
+package com.tterrag.chatmux.api.websocket;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -10,6 +10,6 @@ public interface WebSocketClient<I, O> {
     
     FluxSink<O> outbound();
 
-    Mono<Void> connect(String string, FrameParser<I, O> frameParser);
+    Mono<Void> connect(String string, IFrameParser<I, O> frameParser);
 
 }

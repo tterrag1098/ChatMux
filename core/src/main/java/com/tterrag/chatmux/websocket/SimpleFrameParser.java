@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tterrag.chatmux.api.websocket.IFrameParser;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -18,7 +19,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
 import reactor.core.publisher.UnicastProcessor;
 import reactor.netty.Connection;
-import reactor.netty.ConnectionObserver;
 import reactor.netty.NettyPipeline;
 import reactor.netty.http.websocket.WebsocketInbound;
 import reactor.netty.http.websocket.WebsocketOutbound;
@@ -30,7 +30,7 @@ import reactor.util.annotation.NonNull;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class FrameParser<I, O> implements ConnectionObserver {
+public class SimpleFrameParser<I, O> implements IFrameParser<I, O> {
 
     private static class CloseHandlerAdapter extends ChannelInboundHandlerAdapter {
 
@@ -74,7 +74,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
     private final UnicastProcessor<O> outboundExchange = UnicastProcessor.create();
     private final MonoProcessor<Void> completionNotifier = MonoProcessor.create();
 
-    public FrameParser(ObjectMapper mapper, Class<? extends I> inputType) {
+    public SimpleFrameParser(ObjectMapper mapper, Class<? extends I> inputType) {
         this(s -> {
             try {
                 return mapper.readValue(s, inputType);
@@ -84,7 +84,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
         }, mapper);
     }
     
-    public FrameParser(Function<String, I> deserializer, ObjectMapper mapper) {
+    public SimpleFrameParser(Function<String, I> deserializer, ObjectMapper mapper) {
         this(deserializer, t -> {
             try {
                 return mapper.writeValueAsString(t);
@@ -99,6 +99,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
         log.debug("{} {}", newState, connection);
     }
 
+    @Override
     public Mono<Void> handle(WebsocketInbound in, WebsocketOutbound out) {
         AtomicReference<CloseStatus> reason = new AtomicReference<>();
         in.withConnection(connection -> connection.addHandlerLast("client.last.closeHandler", new CloseHandlerAdapter(reason)));
@@ -168,6 +169,7 @@ public class FrameParser<I, O> implements ConnectionObserver {
         inboundExchange.onComplete();
     }
     
+    @Override
     public void close() {
         log.debug("Triggering close sequence - signaling completion notifier");
         completionNotifier.onComplete();
@@ -177,10 +179,12 @@ public class FrameParser<I, O> implements ConnectionObserver {
         inboundExchange.onComplete();
     }
 
+    @Override
     public UnicastProcessor<I> inbound() {
         return inboundExchange;
     }
     
+    @Override
     public UnicastProcessor<O> outbound() {
         return outboundExchange;
     }

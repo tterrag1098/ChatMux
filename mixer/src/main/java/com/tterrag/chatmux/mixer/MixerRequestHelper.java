@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.mixer.method.MixerRole;
 import com.tterrag.chatmux.mixer.response.ChannelResponse;
 import com.tterrag.chatmux.mixer.response.UserResponse;
-import com.tterrag.chatmux.util.RequestHelper;
+import com.tterrag.chatmux.util.http.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.publisher.Mono;

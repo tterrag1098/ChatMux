@@ -1,6 +1,6 @@
 package com.tterrag.chatmux.util.command;
 
-import com.tterrag.chatmux.bridge.AbstractChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatMessage;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +9,6 @@ import lombok.RequiredArgsConstructor;
 public abstract class CommandContext {
     
     @Getter
-    private final AbstractChatMessage message;
+    private final ChatMessage<?> message;
 
 }

@@ -6,7 +6,11 @@ dependencies {
     api libs.pf4j
     api libs.reactor
     api libs.reactorNetty
+    api libs.jackson
+    
+    implementation libs.lombok
         
+    annotationProcessor libs.lombok
     annotationProcessor libs.pf4j
 }
 

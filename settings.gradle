@@ -1,5 +1,6 @@
 rootProject.name = 'ChatMux'
 include 'api'
+include 'utils'
 include 'core'
 include 'discord'
 include 'factorio'

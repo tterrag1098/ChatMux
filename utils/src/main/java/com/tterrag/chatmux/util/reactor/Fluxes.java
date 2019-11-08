@@ -1,4 +1,4 @@
-package com.tterrag.chatmux.util;
+package com.tterrag.chatmux.util.reactor;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;

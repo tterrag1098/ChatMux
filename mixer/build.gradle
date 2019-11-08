@@ -1,4 +1,5 @@
 dependencies {
+    implementation project(':utils')
     implementation project(':core')
     
     annotationProcessor libs.pf4j

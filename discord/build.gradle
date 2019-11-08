@@ -10,7 +10,8 @@ dependencies {
     
 	implementation libs.logback
     
-    compileOnly project(':core')
+    implementation project(':utils')
+    implementation project(':core')
     
     annotationProcessor libs.pf4j
     annotationProcessor libs.lombok

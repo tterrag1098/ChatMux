@@ -1,8 +1,10 @@
 package com.tterrag.chatmux.websocket;
 
+import com.tterrag.chatmux.api.websocket.IFrameParser;
+import com.tterrag.chatmux.api.websocket.WebSocketClient;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.Disposable;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
@@ -30,7 +32,7 @@ public class SimpleWebSocketClient<I, O> implements WebSocketClient<I, O> {
     @NonNull
     private final FluxSink<O> senderSink = sender.sink(FluxSink.OverflowStrategy.LATEST);
         
-    public Mono<Void> connect(@NonNull String url, FrameParser<I, O> handler) {
+    public Mono<Void> connect(String url, IFrameParser<I, O> handler) {
         return Mono.defer(() -> {
             // Subscribe each inbound GatewayPayload to the receiver sink
             Flux<I> inboundSub = handler.inbound()

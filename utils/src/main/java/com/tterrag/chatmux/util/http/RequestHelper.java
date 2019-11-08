@@ -1,4 +1,4 @@
-package com.tterrag.chatmux.util;
+package com.tterrag.chatmux.util.http;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -7,12 +7,12 @@ import java.util.function.Consumer;
 import org.reactivestreams.Publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
@@ -68,7 +68,7 @@ public abstract class RequestHelper {
     private Publisher<? extends ByteBuf> encodePayload(Object payload) {
         return Mono.just(payload)
                 .map(p -> p instanceof String ? ((String) p).replaceAll("\\r?\\n", "\\\\n") : runUnchecked(() -> mapper.writeValueAsString(p)))
-                .map(json -> Unpooled.wrappedBuffer(json.getBytes(Charsets.UTF_8)));
+                .map(json -> Unpooled.wrappedBuffer(json.getBytes(CharsetUtil.UTF_8)));
     }
     
     public ResponseReceiver<?> post(String endpoint, Object payload) {

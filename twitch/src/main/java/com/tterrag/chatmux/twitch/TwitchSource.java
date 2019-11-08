@@ -8,10 +8,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatSource;
+import com.tterrag.chatmux.api.websocket.WebSocketClient;
 import com.tterrag.chatmux.twitch.irc.IRCEvent;
-import com.tterrag.chatmux.websocket.FrameParser;
+import com.tterrag.chatmux.websocket.SimpleFrameParser;
 import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
-import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class TwitchSource implements ChatSource<TwitchMessage> {
     @Override
     public Flux<TwitchMessage> connect(String channel) {
         if (!connected) {
-            send.connect("wss://irc-ws.chat.twitch.tv:443", new FrameParser<>(IRCEvent::parse, Function.identity()))
+            send.connect("wss://irc-ws.chat.twitch.tv:443", new SimpleFrameParser<>(IRCEvent::parse, Function.identity()))
                 .subscribe($ -> {}, t -> log.error("Twitch websocket completed with error", t), () -> log.error("Twitch websocket completed"));
             
             send.outbound()
@@ -50,7 +50,7 @@ public class TwitchSource implements ChatSource<TwitchMessage> {
                 .next("CAP REQ :twitch.tv/tags")
                 .next("CAP REQ :twitch.tv/commands");
             
-            receive.connect("wss://irc-ws.chat.twitch.tv:443", new FrameParser<>(IRCEvent::parse, Function.identity()))
+            receive.connect("wss://irc-ws.chat.twitch.tv:443", new SimpleFrameParser<>(IRCEvent::parse, Function.identity()))
                 .subscribe($ -> {}, t -> log.error("Twitch websocket completed with error", t), () -> log.error("Twitch websocket completed"));
         
             receive.outbound()

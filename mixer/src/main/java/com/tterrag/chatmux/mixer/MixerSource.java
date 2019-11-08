@@ -9,16 +9,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatSource;
+import com.tterrag.chatmux.api.websocket.WebSocketClient;
 import com.tterrag.chatmux.mixer.event.MixerEvent;
 import com.tterrag.chatmux.mixer.event.ReplyEvent;
 import com.tterrag.chatmux.mixer.event.reply.MessageReply;
 import com.tterrag.chatmux.mixer.method.MixerMethod;
 import com.tterrag.chatmux.mixer.method.MixerMethod.MethodType;
 import com.tterrag.chatmux.mixer.response.ChatResponse;
-import com.tterrag.chatmux.util.Monos;
-import com.tterrag.chatmux.websocket.FrameParser;
+import com.tterrag.chatmux.util.reactor.Monos;
+import com.tterrag.chatmux.websocket.SimpleFrameParser;
 import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
-import com.tterrag.chatmux.websocket.WebSocketClient;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -89,7 +89,7 @@ public class MixerSource implements ChatSource<MixerMessage> {
             final WebSocketClient<MixerEvent, MixerMethod> socket = new SimpleWebSocketClient<>();
             MixerRequestHelper mrh = new MixerRequestHelper(new ObjectMapper(), MixerService.getInstance().getData().getClientId(), MixerService.getInstance().getData().getToken());
             return mrh.get("/chats/" + chan, ChatResponse.class)
-                .doOnNext(chat -> connections.put(chan, socket.connect(chat.endpoints[0], new FrameParser<>(MixerEvent::parse, new ObjectMapper()))
+                .doOnNext(chat -> connections.put(chan, socket.connect(chat.endpoints[0], new SimpleFrameParser<>(MixerEvent::parse, new ObjectMapper()))
                         .subscribe($ -> {}, t -> log.error("Exception handling mixer chat", t), () -> log.error("Mixer chat handler completed"))))
                 .doOnNext(chat -> socket.outbound().next(new MixerMethod(MethodType.AUTH, chan, MixerService.getInstance().getData().getUserId(), chat.authKey)
                         .saveId(sentMethods::put)))

@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tterrag.chatmux.twitch.response.UserResponse;
-import com.tterrag.chatmux.util.RequestHelper;
+import com.tterrag.chatmux.util.http.RequestHelper;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
