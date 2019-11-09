@@ -87,11 +87,11 @@ public abstract class RequestHelper {
     }
     
     public <T> Mono<T> post(String endpoint, Object payload, Class<? extends T> type) {
-        return get(endpoint, TypeFactory.defaultInstance().constructType(type));
+        return post(endpoint, payload, TypeFactory.defaultInstance().constructType(type));
     }
     
     public <T> Mono<T> post(String endpoint, Object payload, TypeReference<? extends T> type) {
-        return get(endpoint, TypeFactory.defaultInstance().constructType(type));
+        return post(endpoint, payload, TypeFactory.defaultInstance().constructType(type));
     }
     
     public <T> Mono<T> post(String endpoint, Object payload, JavaType type) {
