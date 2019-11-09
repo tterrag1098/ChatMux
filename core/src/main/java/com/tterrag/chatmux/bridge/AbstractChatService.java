@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.bridge.ChatSource;
+import com.tterrag.chatmux.api.command.CommandHandler;
 import com.tterrag.chatmux.api.config.ServiceConfig;
 import com.tterrag.chatmux.links.LinkManager;
 
@@ -61,7 +62,7 @@ public abstract class AbstractChatService<M extends ChatMessage<M>, S extends Ch
     
     public abstract @Nullable ServiceConfig<?> getConfig();
     
-    public Mono<Void> runInterface(LinkManager manager) {
+    public Mono<CommandHandler> getInterface(LinkManager manager) {
         throw new UnsupportedOperationException("Service '" + name + "' cannot be used as main");
     }
     

@@ -4,9 +4,11 @@ import java.util.regex.Matcher;
 
 import org.pf4j.Extension;
 
+import com.tterrag.chatmux.api.command.CommandHandler;
 import com.tterrag.chatmux.api.config.ServiceConfig;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
+import com.tterrag.chatmux.discord.command.DiscordCommandHandler;
 import com.tterrag.chatmux.links.LinkManager;
 
 import discord4j.core.DiscordClient;
@@ -26,9 +28,6 @@ import reactor.core.scheduler.Schedulers;
 @Extension
 @Slf4j
 public class DiscordService extends AbstractChatService<DiscordMessage, DiscordSource> {
-    
-    @Getter
-    public static Mono<User> botUser = Mono.empty();
 
     public DiscordService() {
         super("discord");
@@ -60,31 +59,10 @@ public class DiscordService extends AbstractChatService<DiscordMessage, DiscordS
     }
     
     @Override
-    public Mono<Void> runInterface(LinkManager manager) {
-        DiscordClient discord = ((DiscordSource)getSource()).getClient();
-        
-        final DiscordCommandHandler commands = new DiscordCommandHandler(manager);
-        
-        botUser = discord.getEventDispatcher()
-                .on(ReadyEvent.class)
-                .publishOn(Schedulers.elastic())
-                .doOnNext(r -> manager.readLinks())
-                .map(e -> e.getSelf())
-                .next()
-                .cache();
-        
-        Mono<Void> commandListener = discord.getEventDispatcher()
-                .on(MessageCreateEvent.class)
-                .flatMap(mc -> Mono.zip(mc.getMessage().getChannel().cast(TextChannel.class), Mono.justOrEmpty(mc.getMessage().getAuthor()))
-                        .flatMap(t -> commands.handle(t.getT1(), t.getT2(), mc.getMessage().getContent().orElse("").split("\\s+"))
-                        					  .doOnError(ex -> log.error("Exception handling discord commands:", ex))
-                        					  .onErrorResume($ -> Mono.empty())))
-                .doOnError(t -> log.error("Exception handling message create", t))
-                .then();
-        
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> discord.logout().block()));
-        
-        return Mono.when(botUser, commandListener, discord.login());
+    public Mono<CommandHandler> getInterface(LinkManager manager) {
+        return Mono.just(((DiscordSource)getSource()).getClient())
+                .doOnNext(client -> Runtime.getRuntime().addShutdownHook(new Thread(() -> client.logout().block())))
+                .map(client -> new DiscordCommandHandler(client, manager));
     }
     
     @Override

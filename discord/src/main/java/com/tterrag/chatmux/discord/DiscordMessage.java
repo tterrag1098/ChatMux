@@ -33,12 +33,12 @@ public class DiscordMessage extends AbstractChatMessage<DiscordMessage> {
     static final Pattern ROLE_MENTION = Pattern.compile("<@&(\\d+)>");
     static final Pattern EMOTE = Pattern.compile("<(a)?:(\\S+):(\\d+)>");
     
-    public static Mono<DiscordMessage> create(DiscordClient client, Message message) {
+    public static Mono<DiscordMessage> create(Message message) {
         return Mono.zip(
                     message.getGuild(),
                     message.getChannel().cast(TextChannel.class),
                     message.getAuthorAsMember())
-                .flatMap(t -> stripAllMentions(client, message.getContent().get(), t.getT2())
+                .flatMap(t -> stripAllMentions(message.getClient(), message.getContent().get(), t.getT2())
                         .map(m -> new DiscordMessage(message.getContent().get(), m, t.getT1(), t.getT2(), t.getT3(), message)));
     }
     

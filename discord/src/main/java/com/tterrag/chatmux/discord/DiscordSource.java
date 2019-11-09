@@ -66,7 +66,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
                 .filter(e -> e.getMessage().getContent().isPresent())
                 .filter(e -> !TEMP_COMMAND_PATTERN.matcher(e.getMessage().getContent().get()).find())
                 .flatMap(e -> e.getMessage().getChannel().ofType(TextChannel.class).map(c -> Tuples.of(e, c)))
-                .flatMap(t -> DiscordMessage.create(client, t.getT1().getMessage()))
+                .flatMap(t -> DiscordMessage.create(t.getT1().getMessage()))
                 .share();
     }
 
@@ -106,7 +106,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
                             .next()
                             .flatMap(mra -> mra.getMessage().flatMap(Message::delete).and(t.getT1().delete()).thenReturn(t.getT2()))
                             .switchIfEmpty(Mono.justOrEmpty(client.getSelfId()).flatMap(u -> t.getT2().removeReaction(ReactionEmoji.unicode(ADMIN_EMOTE), u)).thenReturn(t.getT2())))
-                    .flatMap(msg -> DiscordMessage.create(client, msg));
+                    .flatMap(msg -> DiscordMessage.create(msg));
     }
 
     private Mono<String> discordify(Snowflake channel, ChatMessage<?> msg) {

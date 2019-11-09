@@ -8,6 +8,8 @@ import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 
 import com.tterrag.chatmux.api.bridge.ChatService;
+import com.tterrag.chatmux.api.command.CommandHandler;
+import com.tterrag.chatmux.api.command.CommandListener;
 import com.tterrag.chatmux.api.config.ServiceConfig;
 import com.tterrag.chatmux.api.config.ServiceData;
 import com.tterrag.chatmux.api.wiretap.WiretapPlugin;
@@ -61,7 +63,12 @@ public class Main {
         List<WiretapPlugin> wiretaps = pluginManager.getExtensions(WiretapPlugin.class);
         log.info("Loaded wiretaps: {}", wiretaps);
         
+        List<CommandListener> commandListeners = pluginManager.getExtensions(CommandListener.class);
+        log.info("Loaded command listeners: {}", commandListeners);
+        
         log.info("Delegating to main interface: {}", Main.cfg.getMain());
-        return Main.cfg.getMain().runInterface(new LinkManager(wiretaps));
+        return Main.cfg.getMain().getInterface(new LinkManager(wiretaps))
+                .doOnNext(ch -> commandListeners.forEach(ch::addListener))
+                .flatMap(CommandHandler::start);
     }
 }
