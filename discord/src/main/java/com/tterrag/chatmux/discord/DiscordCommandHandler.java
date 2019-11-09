@@ -1,5 +1,6 @@
 package com.tterrag.chatmux.discord;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.tterrag.chatmux.api.bridge.ChatChannel;
@@ -47,8 +48,9 @@ public class DiscordCommandHandler {
             final boolean raw = args[0].equals("+linkraw");
 
             return sources
-                   .doOnNext(t -> manager.addLink(t.getT1(), t.getT2(), raw, manager.connect(t.getT1(), t.getT2(), raw)))
-                   .flatMap(t -> channel.createMessage("Link established! " + t.getT1() + " -> " + t.getT2()))
+                   .map(t -> manager.addLink(t.getT1(), t.getT2(), raw, manager.connect(t.getT1(), t.getT2(), raw)))
+                   .flatMap(Link::prettyPrint)
+                   .flatMap(link -> channel.createMessage("Link established! " + link))
                    .doOnError(t -> log.error("Exception establishing link", t))
                    .onErrorResume(IllegalArgumentException.class, e -> channel.createMessage(e.getMessage()))
                    .doOnError(t -> log.error("Secondary exception notifying error", t));
@@ -58,15 +60,13 @@ public class DiscordCommandHandler {
             
             Mono<Tuple2<ChatChannel<?>, ChatChannel<?>>> sources = Mono.zip(from, to);
 
-            return sources.flatMap(t -> {
-                       if (manager.removeLink(t.getT1(), t.getT2())) {
-                           return channel.createMessage("Link broken! " + t.getT1() + " -/> " + t.getT2());
-                       } else {
-                           return channel.createMessage("No such link to remove");
-                       }
-                   })
-                   .doOnError(t -> log.error("Exception removing link", t))
-                   .onErrorResume(IllegalArgumentException.class, m -> channel.createMessage(m.toString()));
+            return sources.flatMapIterable(t -> manager.removeLink(t.getT1(), t.getT2()))
+                    .flatMap(Link::prettyPrint)
+                    .flatMap(link -> channel.createMessage("Link broken! " + link))
+                    .switchIfEmpty(channel.createMessage("No such link to remove"))
+                    .doOnError(t -> log.error("Exception removing link", t))
+                    .onErrorResume(IllegalArgumentException.class, m -> channel.createMessage(m.toString()))
+                    .then();
         } else if (args[0].equals("~links")) {
             return Flux.fromIterable(manager.getLinks())
                     .flatMap(Link::prettyPrint)

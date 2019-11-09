@@ -65,7 +65,7 @@ public class LinkManager {
         public Mono<String> prettyPrint() {
             return from.getService().prettifyChannel(from.getName())
                     .zipWith(to.getService().prettifyChannel(to.getName()),
-                            (fromName, toName) -> from.getService().getName() + "/" + fromName + " -> " + to.getService().getName() + "/" + toName);
+                            (fromName, toName) -> from.getService().getName() + "/" + fromName + " -> " + to.getService().getName() + "/" + toName + (raw ? " (raw)" : ""));
         }
     }
     
@@ -129,8 +129,10 @@ public class LinkManager {
                 .subscribe();
     }
     
-    public void addLink(ChatChannelImpl<?> from, ChatChannelImpl<?> to, boolean raw, Disposable subscriber) {
-        addLink(new Link(from, to, raw, subscriber));
+    public Link addLink(ChatChannelImpl<?> from, ChatChannelImpl<?> to, boolean raw, Disposable subscriber) {
+        Link ret = new Link(from, to, raw, subscriber);
+        addLink(ret);
+        return ret;
     }
     
     private void addLink(Link link) {
@@ -138,12 +140,12 @@ public class LinkManager {
         saveLinks();
     }
     
-    public boolean removeLink(ChatChannel<?> from, ChatChannel<?> to) {
+    public List<Link> removeLink(ChatChannel<?> from, ChatChannel<?> to) {
         Multimap<String, Link> typeLinks = links.get(from.getService());
         Collection<Link> channelLinks = typeLinks.get(from.getName());
         List<Link> toRemove = channelLinks.stream().filter(c -> c.getTo().equals(to)).collect(Collectors.toList());
         if (toRemove.isEmpty()) {
-            return false;
+            return toRemove;
         }
         toRemove.forEach(l -> l.getSubscriber().dispose());
         channelLinks.removeAll(toRemove);
@@ -151,7 +153,7 @@ public class LinkManager {
             from.getService().getSource().disconnect(from.getName());
         }
         saveLinks();
-        return true;
+        return toRemove;
     }
     
     public List<Link> getLinks() {
