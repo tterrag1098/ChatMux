@@ -40,6 +40,8 @@ public class MixerSource implements ChatSource<MixerMessage> {
     @NonNull
     private final Map<Integer, Mono<WebSocketClient<MixerEvent, MixerMethod>>> mixer = new ConcurrentHashMap<>();
     @NonNull
+    private final Map<String, Flux<MixerMessage>> sources = new ConcurrentHashMap<>();
+    @NonNull
     private final Map<Integer, Disposable> connections = new ConcurrentHashMap<>();
     @NonNull // Mixer API is super clever and doesn't send the method name back in the reply, so we have to track it ourselves
     private final Map<Integer, MethodType> sentMethods = new ConcurrentHashMap<>();
@@ -55,16 +57,18 @@ public class MixerSource implements ChatSource<MixerMessage> {
     
     @Override
     public Flux<MixerMessage> connect(String channel) {
-        return getClient(channel)
-            .flatMapMany(client -> client.inbound()
-                    .log(log.getName())
-                    .ofType(MixerEvent.Message.class)
-                    .filter(m -> !sentMessages.remove(m.id))
-                    .flatMap(e -> helper.getUser(e.userId)
-                            .zipWith(helper.getChannel(e.channel).flatMap(c -> helper.getUser(c.userId)),
-                                    (sender, channelOwner) -> new MixerMessage(helper, client, e, channelOwner.username, sender.avatarUrl))))
-            .doOnError(t -> log.error("Failed to receive from mixer", t))
-            .doOnComplete(() -> log.error("Mixer connection completed"));
+        return sources.computeIfAbsent(channel, chan -> getClient(chan)
+                .flatMapMany(client -> client.inbound()
+                .log(log.getName())
+                .ofType(MixerEvent.Message.class)
+                .filter(m -> !sentMessages.remove(m.id))
+                .flatMap(e -> helper.getUser(e.userId)
+                        .zipWith(helper.getChannel(e.channel).flatMap(c -> helper.getUser(c.userId)),
+                                (sender, channelOwner) -> new MixerMessage(helper, client, e, channelOwner.username, sender.avatarUrl))))
+                .doOnError(t -> log.error("Failed to receive from mixer", t))
+                .doOnComplete(() -> log.error("Mixer connection completed"))
+                .doOnTerminate(() -> sources.remove(channel))
+                .share());
     }
     
     @Override

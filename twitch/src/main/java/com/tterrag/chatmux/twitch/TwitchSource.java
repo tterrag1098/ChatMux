@@ -38,6 +38,8 @@ public class TwitchSource implements ChatSource<TwitchMessage> {
         return TwitchService.getInstance();
     }
     
+    private volatile Flux<TwitchMessage> messageRelay;
+    
     @Override
     public Flux<TwitchMessage> connect(String channel) {
         if (!connected) {
@@ -69,14 +71,19 @@ public class TwitchSource implements ChatSource<TwitchMessage> {
         Flux<IRCEvent.Ping> pingPongReceive = receive.inbound().ofType(IRCEvent.Ping.class)
                 .doOnNext(p -> receive.outbound().next("PONG :tmi.twitch.tv"));
         
-        Flux<TwitchMessage> messageRelay = receive.inbound().ofType(IRCEvent.Message.class)
-            .filter(e -> e.getChannel().equals(lcChan))
-            .filter(e -> !sentMessages.remove(e.getContent()))
-            .flatMap(e -> helper.getUser(e.getUser())
-                                .zipWith(helper.getUser(e.getChannel()),
-                                        (u, c) -> new TwitchMessage(receive, e, c.displayName, u.displayName, u.avatarUrl)));
-        
-        return Flux.merge(pingPongSend, pingPongReceive, messageRelay).ofType(TwitchMessage.class);
+        synchronized (this) {
+            if (messageRelay == null) {
+                messageRelay = receive.inbound().ofType(IRCEvent.Message.class)
+                        .filter(e -> e.getChannel().equals(lcChan))
+                        .filter(e -> !sentMessages.remove(e.getContent()))
+                        .flatMap(e -> helper.getUser(e.getUser())
+                                            .zipWith(helper.getUser(e.getChannel()),
+                                                    (u, c) -> new TwitchMessage(receive, e, c.displayName, u.displayName, u.avatarUrl)))
+                        .doOnTerminate(() -> { synchronized(TwitchSource.this) { messageRelay = null; }})
+                        .share();
+            }
+            return Flux.merge(pingPongSend, pingPongReceive, messageRelay).ofType(TwitchMessage.class);
+        }
     }
     
     @Override
