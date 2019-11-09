@@ -6,7 +6,10 @@ import java.util.function.Consumer;
 
 import org.reactivestreams.Publisher;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -51,7 +54,7 @@ public abstract class RequestHelper {
         }
     }
     
-    private <T> Mono<T> handleResponse(HttpClientResponse resp, ByteBufMono body, Class<? extends T> type) {
+    protected <T> Mono<T> handleResponse(HttpClientResponse resp, ByteBufMono body, JavaType type) {
         int response = resp.status().code();
         
         if (response / 100 != 2) {
@@ -62,10 +65,18 @@ public abstract class RequestHelper {
     }
     
     public <T> Mono<T> get(String endpoint, Class<? extends T> type) {
+        return get(endpoint, TypeFactory.defaultInstance().constructType(type));
+    }
+    
+    public <T> Mono<T> get(String endpoint, TypeReference<? extends T> type) {
+        return get(endpoint, TypeFactory.defaultInstance().constructType(type));
+    }
+    
+    public <T> Mono<T> get(String endpoint, JavaType type) {
         return request(endpoint, HttpMethod.GET).<T>responseSingle((r, buf) -> handleResponse(r, buf, type)).doOnError(requestError(HttpMethod.GET, endpoint));
     }
     
-    private Publisher<? extends ByteBuf> encodePayload(Object payload) {
+    protected final Publisher<? extends ByteBuf> encodePayload(Object payload) {
         return Mono.just(payload)
                 .map(p -> p instanceof String ? ((String) p).replaceAll("\\r?\\n", "\\\\n") : runUnchecked(() -> mapper.writeValueAsString(p)))
                 .map(json -> Unpooled.wrappedBuffer(json.getBytes(CharsetUtil.UTF_8)));
@@ -76,6 +87,14 @@ public abstract class RequestHelper {
     }
     
     public <T> Mono<T> post(String endpoint, Object payload, Class<? extends T> type) {
+        return get(endpoint, TypeFactory.defaultInstance().constructType(type));
+    }
+    
+    public <T> Mono<T> post(String endpoint, Object payload, TypeReference<? extends T> type) {
+        return get(endpoint, TypeFactory.defaultInstance().constructType(type));
+    }
+    
+    public <T> Mono<T> post(String endpoint, Object payload, JavaType type) {
         return post(endpoint, payload).<T>responseSingle((r, buf) -> handleResponse(r, buf, type)).doOnError(requestError(HttpMethod.POST, endpoint));
     }
 
