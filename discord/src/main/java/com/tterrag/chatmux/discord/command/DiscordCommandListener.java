@@ -77,4 +77,9 @@ public class DiscordCommandListener implements CommandListener {
         }
         return Mono.empty();
     }
+    
+    @Override
+    public Mono<Boolean> canHandle(String command, String args) {
+        return Mono.fromSupplier(() -> command.equals("+link") || command.equals("+linkraw") || command.equals("-link") || command.equals("~links"));
+    }
 }

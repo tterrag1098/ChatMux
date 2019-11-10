@@ -1,5 +1,7 @@
 package com.tterrag.chatmux.twitch;
 
+import java.util.Objects;
+
 import com.tterrag.chatmux.api.websocket.WebSocketClient;
 import com.tterrag.chatmux.bridge.AbstractChatMessage;
 import com.tterrag.chatmux.twitch.irc.IRCEvent;
@@ -33,5 +35,28 @@ public class TwitchMessage extends AbstractChatMessage<TwitchMessage> {
     public Mono<Void> ban() {
         client.outbound().next("PRIVMSG #" + getChannel() + " :/ban " + message.getUser());
         return Mono.empty();
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + Objects.hash(message);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        TwitchMessage other = (TwitchMessage) obj;
+        return Objects.equals(message, other.message);
     }
 }

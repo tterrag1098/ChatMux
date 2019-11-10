@@ -1,6 +1,7 @@
 package com.tterrag.chatmux.discord;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -103,5 +104,28 @@ public class DiscordMessage extends AbstractChatMessage<DiscordMessage> {
     @Override
     public Mono<Void> ban() {
         return guild.ban(author.getId(), ban -> ban.setDeleteMessageDays(0));
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + Objects.hash(message);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        DiscordMessage other = (DiscordMessage) obj;
+        return Objects.equals(message, other.message);
     }
 }

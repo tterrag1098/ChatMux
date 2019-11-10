@@ -60,9 +60,9 @@ public class DiscordService extends AbstractChatService<DiscordMessage, DiscordS
     
     @Override
     public Mono<CommandHandler> getInterface(LinkManager manager) {
-        return Mono.just(((DiscordSource)getSource()).getClient())
+        return Mono.just(getSource().getClient())
                 .doOnNext(client -> Runtime.getRuntime().addShutdownHook(new Thread(() -> client.logout().block())))
-                .map(client -> new DiscordCommandHandler(client, manager));
+                .thenReturn(getSource().createCommandHandler(manager));
     }
     
     @Override

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -15,10 +16,13 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.primitives.Booleans;
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatSource;
+import com.tterrag.chatmux.discord.command.DiscordCommandHandler;
 import com.tterrag.chatmux.discord.util.WebhookMessage;
+import com.tterrag.chatmux.links.LinkManager;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
@@ -31,6 +35,7 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.object.util.Snowflake;
 import emoji4j.EmojiUtils;
+import lombok.Getter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
@@ -40,14 +45,17 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     
     @NonNull
     private static final String ADMIN_EMOTE = "\u274C";
-    private static final Pattern TEMP_COMMAND_PATTERN = Pattern.compile("^\\s*(\\+link(raw)?|^-link|^~links)");
     
     private static final Pattern MENTION = Pattern.compile("(?:^|[^\\\\])@(\\S+)");
     private static final Pattern CHANNEL = Pattern.compile("#(\\S+)");
     private static final Pattern EMOTE = Pattern.compile(":(\\S+):");
     
     @NonNull
+    @Getter
     private final DiscordClient client;
+    
+    @NonNull
+    private Optional<DiscordCommandHandler> commandHandler = Optional.empty();
     
     @NonNull
     private final DiscordRequestHelper helper;
@@ -58,13 +66,15 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     DiscordSource(String token) {
         this.client = new DiscordClientBuilder(token).build();
         this.helper = new DiscordRequestHelper(client, token);
-        
+
         this.messageSource = client.getEventDispatcher()
                 .on(MessageCreateEvent.class)
                 .filter(e -> e.getMember().isPresent())
                 .filter(e -> e.getMessage().getAuthor().map(u -> !u.isBot()).orElse(true))
                 .filter(e -> e.getMessage().getContent().isPresent())
-                .filter(e -> !TEMP_COMMAND_PATTERN.matcher(e.getMessage().getContent().get()).find())
+                .filterWhen(e -> commandHandler.map(ch -> ch.canHandle(e.getMessage().getContent().get()))
+                        .orElse(Mono.just(Boolean.FALSE))
+                        .map(t -> !t))
                 .flatMap(e -> e.getMessage().getChannel().ofType(TextChannel.class).map(c -> Tuples.of(e, c)))
                 .flatMap(t -> DiscordMessage.create(t.getT1().getMessage()))
                 .share();
@@ -177,8 +187,8 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
 
     @Override
     public void disconnect(String channel) {}
-
-    public DiscordClient getClient() {
-        return client;
+    
+    public DiscordCommandHandler createCommandHandler(LinkManager manager) {
+        return (this.commandHandler = Optional.of(new DiscordCommandHandler(client, manager))).get(); 
     }
 }

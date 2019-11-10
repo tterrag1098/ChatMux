@@ -24,6 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -59,14 +61,26 @@ public class DiscordCommandHandler implements CommandHandler {
 
         return Mono.when(readyListener, commandListener, client.login());
     }
+    
+    private Tuple2<String, String> splitInput(String input) {
+        int split = input.indexOf(' ');
+        String command = split >= 0 ? input.substring(0, split) : input;
+        String args = split >= 0 ? input.substring(split).trim() : "";
+        return Tuples.of(command, args);
+    }
 
     private Mono<Void> runCommand(TextChannel textChannel, User user, String content) {
-        int split = content.indexOf(' ');
-        String command = split >= 0 ? content.substring(0, split) : content;
-        String args = split >= 0 ? content.substring(split).trim() : "";
+        Tuple2<String, String> split = splitInput(content);
         return Flux.fromIterable(listeners)
-                .flatMap(l -> l.runCommand(command, new Context(args, textChannel.getId().asString(), user.getId().asString(), textChannel)))
+                .flatMap(l -> l.runCommand(split.getT1(), new Context(split.getT2(), textChannel.getId().asString(), user.getId().asString(), textChannel)))
                 .then();
+    }
+    
+    public Mono<Boolean> canHandle(String content) {
+        Tuple2<String, String> split = splitInput(content);
+        return Flux.fromIterable(listeners)
+                .filterWhen(l -> l.canHandle(split.getT1(), split.getT2()))
+                .hasElements();
     }
 
     @Override

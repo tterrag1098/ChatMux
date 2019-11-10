@@ -1,5 +1,6 @@
 package com.tterrag.chatmux.twitch.irc;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,7 +51,6 @@ public class IRCEvent {
     }
 
     @Value
-    @EqualsAndHashCode(callSuper = false)
     public static class Message extends IRCEvent {
         
         public enum Tag {
@@ -61,6 +61,26 @@ public class IRCEvent {
         private final ImmutableMap<Tag, String> tags;
         
         private final String user, channel, content;
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Message other = (Message) obj;
+            return Objects.equals(tags.get(Tag.id), other.tags.get(Tag.id));
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(tags.get(Tag.id));
+        }
     }
 
     @Value
