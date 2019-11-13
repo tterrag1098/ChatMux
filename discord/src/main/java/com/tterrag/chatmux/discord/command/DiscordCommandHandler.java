@@ -35,14 +35,16 @@ public class DiscordCommandHandler implements CommandHandler {
     
     private final DiscordClient client;
     private final LinkManager manager;
+    private final DiscordCommandListener baseListener;
     
     @NonNull
-    private final Set<CommandListener> listeners;
+    private final Set<CommandListener> listeners = Sets.newConcurrentHashSet();
     
     public DiscordCommandHandler(DiscordClient client, LinkManager manager) {
         this.client = client;
         this.manager = manager;
-        this.listeners = Sets.newConcurrentHashSet(Sets.<CommandListener>newHashSet(new DiscordCommandListener(manager)));
+        this.baseListener = new DiscordCommandListener(manager);
+        addListener(this.baseListener);
     }
     
     @Override
@@ -115,6 +117,12 @@ public class DiscordCommandHandler implements CommandHandler {
         @Override
         public ChatService<?> getService(String name) {
             return Objects.requireNonNull(AbstractChatService.byName(name), "Invalid service name");
+        }
+        
+        @Override
+        public Flux<? extends ChatMessage<?>> connect(String input) {
+            return baseListener.getChannel(input)
+                    .flatMapMany(this::connect);
         }
     }
 }

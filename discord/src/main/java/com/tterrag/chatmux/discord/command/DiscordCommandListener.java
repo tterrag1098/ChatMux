@@ -24,7 +24,7 @@ public class DiscordCommandListener implements CommandListener {
     
     private final LinkManager manager;
     
-    private Mono<ChatChannelImpl<?>> getChannel(String input) {
+    Mono<ChatChannelImpl<?>> getChannel(String input) {
         String[] data = input.split("/");
         if (data.length != 2) {
             return Mono.error(new IllegalArgumentException("Link must be in the format `service/channel`"));
