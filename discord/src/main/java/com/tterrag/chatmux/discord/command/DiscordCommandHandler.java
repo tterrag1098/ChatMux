@@ -1,5 +1,6 @@
 package com.tterrag.chatmux.discord.command;
 
+import java.util.Objects;
 import java.util.Set;
 
 import com.google.common.collect.Sets;
@@ -8,6 +9,7 @@ import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.command.CommandContext;
 import com.tterrag.chatmux.api.command.CommandHandler;
 import com.tterrag.chatmux.api.command.CommandListener;
+import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.discord.DiscordMessage;
 import com.tterrag.chatmux.discord.DiscordService;
 import com.tterrag.chatmux.links.LinkManager;
@@ -89,7 +91,7 @@ public class DiscordCommandHandler implements CommandHandler {
     }
     
     @Value
-    private static class Context implements CommandContext<DiscordMessage> {
+    private class Context implements CommandContext<DiscordMessage> {
         
         @Getter(onMethod = @__({@Override}))
         String args;
@@ -108,6 +110,11 @@ public class DiscordCommandHandler implements CommandHandler {
         @Override
         public Mono<DiscordMessage> reply(String msg) {
             return channel.createMessage(msg).flatMap(DiscordMessage::create);
+        }
+        
+        @Override
+        public ChatService<?> getService(String name) {
+            return Objects.requireNonNull(AbstractChatService.byName(name), "Invalid service name");
         }
     }
 }
