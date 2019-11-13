@@ -6,6 +6,7 @@ import java.util.Set;
 import com.google.common.collect.Sets;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatService;
+import com.tterrag.chatmux.api.bridge.Connectable;
 import com.tterrag.chatmux.api.command.CommandContext;
 import com.tterrag.chatmux.api.command.CommandHandler;
 import com.tterrag.chatmux.api.command.CommandListener;
@@ -31,7 +32,7 @@ import reactor.util.function.Tuples;
 
 @RequiredArgsConstructor
 @Slf4j
-public class DiscordCommandHandler implements CommandHandler {
+public class DiscordCommandHandler implements CommandHandler, Connectable {
     
     private final DiscordClient client;
     private final LinkManager manager;
@@ -52,6 +53,8 @@ public class DiscordCommandHandler implements CommandHandler {
         Mono<Void> readyListener = client.getEventDispatcher()
                 .on(ReadyEvent.class)
                 .doOnNext($ -> manager.readLinks())
+                .flatMapIterable($ -> this.listeners)
+                .flatMap(l -> l.onServiceAvailable(this))
                 .then();
         
         Mono<Void> commandListener = client.getEventDispatcher()
@@ -92,6 +95,12 @@ public class DiscordCommandHandler implements CommandHandler {
         listeners.add(listener);
     }
     
+    @Override
+    public Flux<? extends ChatMessage<?>> connect(String input) {
+        return baseListener.getChannel(input)
+                .flatMapMany(this::connect);
+    }
+    
     @Value
     private class Context implements CommandContext<DiscordMessage> {
         
@@ -121,8 +130,7 @@ public class DiscordCommandHandler implements CommandHandler {
         
         @Override
         public Flux<? extends ChatMessage<?>> connect(String input) {
-            return baseListener.getChannel(input)
-                    .flatMapMany(this::connect);
+            return DiscordCommandHandler.this.connect(input);
         }
     }
 }

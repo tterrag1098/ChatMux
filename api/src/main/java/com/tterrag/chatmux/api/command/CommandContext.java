@@ -1,13 +1,13 @@
 package com.tterrag.chatmux.api.command;
 
-import com.tterrag.chatmux.api.bridge.ChatChannel;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatService;
+import com.tterrag.chatmux.api.bridge.Connectable;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public interface CommandContext<M extends ChatMessage<M>> {
+public interface CommandContext<M extends ChatMessage<M>> extends Connectable {
 
     ChatService<M> getService();
 
@@ -39,16 +39,6 @@ public interface CommandContext<M extends ChatMessage<M>> {
     Mono<M> reply(String msg);
     
     ChatService<?> getService(String name);
-    
-    Flux<? extends ChatMessage<?>> connect(String input);
-    
-    default <R extends ChatMessage<R>> Flux<R> connect(ChatChannel<R> channel) {
-        return connect(channel.getService(), channel.getName());
-    }
-    
-    default <R extends ChatMessage<R>> Flux<R> connect(ChatService<R> service, String channel) {
-        return service.getSource().connect(channel);
-    }
     
     default Flux<M> connect() {
         return connect(getService(), getChannelId());

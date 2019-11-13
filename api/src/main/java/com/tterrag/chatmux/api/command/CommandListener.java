@@ -3,10 +3,15 @@ package com.tterrag.chatmux.api.command;
 import org.pf4j.ExtensionPoint;
 
 import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.Connectable;
 
 import reactor.core.publisher.Mono;
 
 public interface CommandListener extends ExtensionPoint {
+    
+    default Mono<?> onServiceAvailable(Connectable connectable) {
+        return Mono.empty();
+    }
     
     <M extends ChatMessage<M>> Mono<?> runCommand(String command, CommandContext<M> ctx);
 
