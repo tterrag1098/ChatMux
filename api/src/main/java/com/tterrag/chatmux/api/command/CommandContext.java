@@ -18,7 +18,7 @@ public interface CommandContext<M extends ChatMessage<M>> extends Connectable {
     }
 
     default String[] getSplitArgs(String split) {
-        return getArgs().split(split);
+        return getArgs().isEmpty() ? new String[0] : getArgs().split(split);
     }
 
     /**
