@@ -18,7 +18,7 @@ public final class ChatChannelImpl<M extends ChatMessage<M>> implements ChatChan
     ChatService<M> service;
     
     @JsonCreator
-    public ChatChannelImpl(@JsonProperty("name") String name, @JsonProperty("type") AbstractChatService<M, ?> service) {
+    public ChatChannelImpl(@JsonProperty("name") String name, @JsonProperty("service") AbstractChatService<M, ?> service) {
         this.name = name;
         this.service = service;
     }
