@@ -75,15 +75,15 @@ public class TwitchSource implements ChatSource<TwitchMessage> {
             if (messageRelay == null) {
                 messageRelay = receive.inbound().ofType(IRCEvent.Message.class)
                         .filter(e -> !sentMessages.remove(e.getContent()))
-                        .flatMap(e -> helper.getUser(e.getUser())
-                                            .zipWith(helper.getUser(e.getChannel()),
+                        .flatMap(e -> helper.getUser(e.getUser()).switchIfEmpty(Mono.error(new IllegalArgumentException("Could not find user")))
+                                            .zipWith(helper.getUser(e.getChannel()).switchIfEmpty(Mono.error(new IllegalArgumentException("Could not find channel"))),
                                                     (u, c) -> new TwitchMessage(receive, e, c.displayName, u.displayName, u.avatarUrl)))
                         .doOnTerminate(() -> { synchronized(TwitchSource.this) { messageRelay = null; }})
                         .share();
             }
             return Flux.merge(pingPongSend, pingPongReceive, messageRelay)
                     .ofType(TwitchMessage.class)
-                    .filter(e -> e.getChannel().equals(lcChan));
+                    .filter(e -> e.getChannel().equalsIgnoreCase(lcChan));
         }
     }
     

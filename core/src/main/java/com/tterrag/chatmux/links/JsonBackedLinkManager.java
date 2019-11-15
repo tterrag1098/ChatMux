@@ -94,9 +94,14 @@ public class JsonBackedLinkManager implements LinkManager {
     @Override
     public <M extends ChatMessage<M>> Disposable connect(ChatChannel<M> from, ChatChannel<?> to, boolean raw) {
         return ChatChannel.connect(from)
-                .flatMap(m -> Flux.fromIterable(callbacks).flatMap(c -> c.onMessage(m, from, to)).then().thenReturn(m))
-                .flatMap(m -> to.getService().getSource().send(to.getName(), m, raw))
-                .doOnError(t -> log.error("Exception processing message", t))
+                .flatMap(m -> Flux.fromIterable(callbacks).flatMap(c -> c.onMessage(m, from, to))
+                        .doOnError(t -> log.error("Exception processing message", t))
+                        .onErrorResume(t -> Mono.empty())
+                        .then()
+                        .thenReturn(m))
+                .flatMap(m -> to.getService().getSource().send(to.getName(), m, raw)
+                        .doOnError(t -> log.error("Exception processing message", t))
+                        .onErrorResume(t -> Mono.empty()))
                 .subscribe();
     }
     
