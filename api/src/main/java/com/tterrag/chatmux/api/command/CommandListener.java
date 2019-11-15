@@ -5,6 +5,7 @@ import java.util.Set;
 import org.pf4j.ExtensionPoint;
 
 import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.bridge.Connectable;
 
 import reactor.core.publisher.Mono;
@@ -19,6 +20,6 @@ public interface CommandListener extends ExtensionPoint {
 
     Mono<Boolean> canHandle(String command, String args);
 
-    default void setAdmins(Set<String> admins) {
+    default void setAdmins(ChatService<?> service, Set<String> admins) {
     }
 }
