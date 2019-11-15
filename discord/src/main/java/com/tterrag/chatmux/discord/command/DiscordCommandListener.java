@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 
 import com.tterrag.chatmux.api.bridge.ChatChannel;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
+import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.command.CommandContext;
 import com.tterrag.chatmux.api.command.CommandListener;
 import com.tterrag.chatmux.api.link.Link;
@@ -79,7 +80,7 @@ public class DiscordCommandListener implements CommandListener {
     }
     
     @Override
-    public Mono<Boolean> canHandle(String command, String args) {
-        return Mono.fromSupplier(() -> command.equals("+link") || command.equals("+linkraw") || command.equals("-link") || command.equals("~links"));
+    public Mono<Boolean> canHandle(ChatService<?> service, String command, String args) {
+        return Mono.fromSupplier(() -> service == DiscordService.getInstance() && (command.equals("+link") || command.equals("+linkraw") || command.equals("-link") || command.equals("~links")));
     }
 }

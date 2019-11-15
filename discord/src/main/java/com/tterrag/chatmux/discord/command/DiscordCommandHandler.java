@@ -84,10 +84,10 @@ public class DiscordCommandHandler implements CommandHandler, Connectable {
                 .then();
     }
     
-    public Mono<Boolean> canHandle(String content) {
+    public Mono<Boolean> canHandle(ChatService<?> service, String content) {
         Tuple2<String, String> split = splitInput(content);
         return Flux.fromIterable(listeners)
-                .filterWhen(l -> l.canHandle(split.getT1(), split.getT2()))
+                .filterWhen(l -> l.canHandle(service, split.getT1(), split.getT2()))
                 .hasElements();
     }
 

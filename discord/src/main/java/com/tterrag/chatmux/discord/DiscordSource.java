@@ -71,7 +71,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
                 .filter(e -> e.getMember().isPresent())
                 .filter(e -> e.getMessage().getAuthor().map(u -> !u.isBot()).orElse(true))
                 .filter(e -> e.getMessage().getContent().isPresent())
-                .filterWhen(e -> commandHandler.map(ch -> ch.canHandle(e.getMessage().getContent().get()))
+                .filterWhen(e -> commandHandler.map(ch -> ch.canHandle(DiscordService.getInstance(), e.getMessage().getContent().get()))
                         .orElse(Mono.just(Boolean.FALSE))
                         .map(t -> !t))
                 .flatMap(e -> e.getMessage().getChannel().ofType(TextChannel.class).map(c -> Tuples.of(e, c)))

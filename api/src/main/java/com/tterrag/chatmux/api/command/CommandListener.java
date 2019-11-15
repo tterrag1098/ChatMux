@@ -18,7 +18,7 @@ public interface CommandListener extends ExtensionPoint {
     
     <M extends ChatMessage<M>> Mono<?> runCommand(String command, CommandContext<M> ctx);
 
-    Mono<Boolean> canHandle(String command, String args);
+    Mono<Boolean> canHandle(ChatService<?> service, String command, String args);
 
     default void setAdmins(ChatService<?> service, Set<String> admins) {
     }

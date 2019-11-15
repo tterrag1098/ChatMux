@@ -68,7 +68,7 @@ public class Main {
         
         log.info("Delegating to main interface: {}", Main.cfg.getMain());
         return Main.cfg.getMain().getInterface()
-                .doOnNext(iface -> commandListeners.forEach(l -> l.setAdmins(iface.getAdmins())))
+                .doOnNext(iface -> commandListeners.forEach(l -> l.setAdmins(iface.getService(), iface.getAdmins())))
                 .flatMap(iface -> iface.getCommandHandler(new JsonBackedLinkManager(wiretaps)))
                 .doOnNext(ch -> commandListeners.forEach(ch::addListener))
                 .flatMap(CommandHandler::start);
