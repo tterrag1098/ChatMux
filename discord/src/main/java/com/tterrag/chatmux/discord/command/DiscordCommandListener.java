@@ -48,7 +48,7 @@ public class DiscordCommandListener implements CommandListener {
             
             Mono<Tuple2<ChatChannelImpl<?>, ChatChannelImpl<?>>> sources = Mono.zip(from, to);
             
-            final boolean raw = args[0].equals("+linkraw");
+            final boolean raw = command.equals("+linkraw");
 
             return sources
                    .map(t -> manager.addLink(t.getT1(), t.getT2(), raw, manager.connect(t.getT1(), t.getT2(), raw)))
