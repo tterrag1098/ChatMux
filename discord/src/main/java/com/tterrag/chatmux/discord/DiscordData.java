@@ -21,4 +21,5 @@ public class DiscordData implements ServiceData {
     @Path("moderation_channels")
     private List<Long> moderationChannels = new ArrayList<>();
     
+    private List<Long> admins = new ArrayList<>();
 }

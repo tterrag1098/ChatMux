@@ -8,6 +8,7 @@ public interface ChatChannel<M extends ChatMessage<M>> {
     
     ChatService<M> getService();
     
-    Flux<M> connect();
-
+    static <M extends ChatMessage<M>> Flux<M> connect(ChatChannel<M> channel) {
+        return channel.getService().getSource().connect(channel.getName());
+    }
 }

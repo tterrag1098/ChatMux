@@ -11,9 +11,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
@@ -25,10 +22,10 @@ import com.google.common.collect.Multimap;
 import com.tterrag.chatmux.api.bridge.ChatChannel;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatService;
+import com.tterrag.chatmux.api.link.Link;
+import com.tterrag.chatmux.api.link.LinkManager;
 import com.tterrag.chatmux.api.wiretap.WiretapPlugin;
-import com.tterrag.chatmux.bridge.ChatChannelImpl;
 
-import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
@@ -38,36 +35,7 @@ import reactor.util.annotation.NonNull;
 import reactor.util.annotation.Nullable;
 
 @Slf4j
-public class LinkManager {
-    
-    @Value
-    @RequiredArgsConstructor
-    public static class Link {
-        
-        ChatChannelImpl<?> from, to;
-
-        boolean raw;
-
-        @JsonIgnore
-        @Nullable
-        Disposable subscriber;
-                
-        @JsonCreator
-        Link(@JsonProperty("from") ChatChannelImpl<?> from, @JsonProperty("to") ChatChannelImpl<?> to, @JsonProperty("raw") boolean raw) {
-            this(from, to, raw, null);
-        }
-        
-        @Override
-        public String toString() {
-            return from + " -> " + to + (raw ? " (raw)" : "");
-        }
-        
-        public Mono<String> prettyPrint() {
-            return from.getService().prettifyChannel(from.getName())
-                    .zipWith(to.getService().prettifyChannel(to.getName()),
-                            (fromName, toName) -> from.getService().getName() + "/" + fromName + " -> " + to.getService().getName() + "/" + toName + (raw ? " (raw)" : ""));
-        }
-    }
+public class JsonBackedLinkManager implements LinkManager {
     
     @Value
     private static class MessageKey {
@@ -77,7 +45,7 @@ public class LinkManager {
         String id;
     }
     
-    private final Map<ChatService<?>, Multimap<String, Link>> links = new HashMap<>();
+    private final Map<ChatService<?>, Multimap<String, SimpleLink>> links = new HashMap<>();
     
     @NonNull
     private final List<WiretapPlugin> callbacks;
@@ -89,12 +57,12 @@ public class LinkManager {
         }
     });
     
-    public LinkManager(Collection<WiretapPlugin> callbacks) {
+    public JsonBackedLinkManager(Collection<WiretapPlugin> callbacks) {
         this.callbacks = ImmutableList.copyOf(callbacks);
     }
 
     private void saveLinks() {
-        List<Link> allLinks = getLinks();
+        List<SimpleLink> allLinks = getLinks();
         try {
             new ObjectMapper().writeValue(new File("links.json"), allLinks);
         } catch (IOException e) {
@@ -102,52 +70,57 @@ public class LinkManager {
         }
     }
 
-    public void readLinks() {
-        try {
-            File file = new File("links.json");
-            if (file.exists()) {
-                List<Link> allLinks = new ObjectMapper().readValue(new File("links.json"), new TypeReference<List<Link>>() {});
-                allLinks.stream()
-                    .map(this::connect)
-                    .forEach(this::addLink);
+    public Mono<Void> readLinks() {
+        return Mono.fromRunnable(() -> {
+            try {
+                File file = new File("links.json");
+                if (file.exists()) {
+                    List<SimpleLink> allLinks = new ObjectMapper().readValue(new File("links.json"), new TypeReference<List<SimpleLink>>() {});
+                    allLinks.stream()
+                        .map(this::connect)
+                        .forEach(this::addLink);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        });
     }
     
-    private Link connect(Link unconnected) {
-        return new Link(unconnected.getFrom(), unconnected.getTo(), unconnected.isRaw(),
+    private SimpleLink connect(SimpleLink unconnected) {
+        return new SimpleLink(unconnected.getFrom(), unconnected.getTo(), unconnected.isRaw(),
                 connect(unconnected.getFrom(), unconnected.getTo(), unconnected.isRaw())); 
     }
     
+    @Override
     public <M extends ChatMessage<M>> Disposable connect(ChatChannel<M> from, ChatChannel<?> to, boolean raw) {
-        return from.connect()
+        return ChatChannel.connect(from)
                 .flatMap(m -> Flux.fromIterable(callbacks).flatMap(c -> c.onMessage(m, from, to)).then().thenReturn(m))
                 .flatMap(m -> to.getService().getSource().send(to.getName(), m, raw))
                 .doOnError(t -> log.error("Exception processing message", t))
                 .subscribe();
     }
     
-    public Link addLink(ChatChannelImpl<?> from, ChatChannelImpl<?> to, boolean raw, Disposable subscriber) {
-        Link ret = new Link(from, to, raw, subscriber);
+    @Override
+    public SimpleLink addLink(ChatChannel<?> from, ChatChannel<?> to, boolean raw, Disposable subscriber) {
+        SimpleLink ret = new SimpleLink(from, to, raw, subscriber);
         addLink(ret);
         return ret;
     }
     
-    private void addLink(Link link) {
+    private void addLink(SimpleLink link) {
         links.computeIfAbsent(link.getFrom().getService(), type -> HashMultimap.create()).put(link.getFrom().getName(), link);
         saveLinks();
     }
     
+    @Override
     public List<Link> removeLink(ChatChannel<?> from, ChatChannel<?> to) {
-        Multimap<String, Link> typeLinks = links.get(from.getService());
-        Collection<Link> channelLinks = typeLinks.get(from.getName());
+        Multimap<String, SimpleLink> typeLinks = links.get(from.getService());
+        Collection<SimpleLink> channelLinks = typeLinks.get(from.getName());
         List<Link> toRemove = channelLinks.stream().filter(c -> c.getTo().equals(to)).collect(Collectors.toList());
         if (toRemove.isEmpty()) {
             return toRemove;
         }
-        toRemove.forEach(l -> l.getSubscriber().dispose());
+        toRemove.forEach(l -> l.getSubscription().dispose());
         channelLinks.removeAll(toRemove);
         if (channelLinks.isEmpty()) {
             from.getService().getSource().disconnect(from.getName());
@@ -156,10 +129,12 @@ public class LinkManager {
         return toRemove;
     }
     
-    public List<Link> getLinks() {
+    @Override
+    public List<SimpleLink> getLinks() {
         return links.values().stream().flatMap(m -> m.values().stream()).collect(Collectors.toList());
     }
     
+    @Override
     public void linkMessage(ChatMessage<?> source, ChatMessage<?> linked) {
         try {
             messageCache.get(new MessageKey(source.getService(), source.getChannelId())).add(linked);
@@ -168,6 +143,7 @@ public class LinkManager {
         }
     }
     
+    @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public <M extends ChatMessage<M>> List<ChatMessage<M>> getLinkedMessages(ChatService<M> type, String id) {
         try {

@@ -16,13 +16,12 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.primitives.Booleans;
 import com.tterrag.chatmux.Main;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.bridge.ChatSource;
+import com.tterrag.chatmux.api.link.LinkManager;
 import com.tterrag.chatmux.discord.command.DiscordCommandHandler;
 import com.tterrag.chatmux.discord.util.WebhookMessage;
-import com.tterrag.chatmux.links.LinkManager;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;

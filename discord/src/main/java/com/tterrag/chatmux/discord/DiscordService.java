@@ -4,26 +4,18 @@ import java.util.regex.Matcher;
 
 import org.pf4j.Extension;
 
-import com.tterrag.chatmux.api.command.CommandHandler;
+import com.tterrag.chatmux.api.bot.BotInterface;
 import com.tterrag.chatmux.api.config.ServiceConfig;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
-import com.tterrag.chatmux.discord.command.DiscordCommandHandler;
-import com.tterrag.chatmux.links.LinkManager;
 
-import discord4j.core.DiscordClient;
-import discord4j.core.event.domain.lifecycle.ReadyEvent;
-import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.GuildChannel;
-import discord4j.core.object.entity.TextChannel;
-import discord4j.core.object.entity.User;
 import discord4j.core.object.util.Snowflake;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 @Extension
 @Slf4j
@@ -59,10 +51,8 @@ public class DiscordService extends AbstractChatService<DiscordMessage, DiscordS
     }
     
     @Override
-    public Mono<CommandHandler> getInterface(LinkManager manager) {
-        return Mono.just(getSource().getClient())
-                .doOnNext(client -> Runtime.getRuntime().addShutdownHook(new Thread(() -> client.logout().block())))
-                .thenReturn(getSource().createCommandHandler(manager));
+    public Mono<BotInterface> getInterface() {
+        return Mono.just(new DiscordInterface(getSource(), getData()));
     }
     
     @Override

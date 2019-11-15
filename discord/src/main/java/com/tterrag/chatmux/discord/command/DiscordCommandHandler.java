@@ -10,10 +10,11 @@ import com.tterrag.chatmux.api.bridge.Connectable;
 import com.tterrag.chatmux.api.command.CommandContext;
 import com.tterrag.chatmux.api.command.CommandHandler;
 import com.tterrag.chatmux.api.command.CommandListener;
+import com.tterrag.chatmux.api.link.LinkManager;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.discord.DiscordMessage;
 import com.tterrag.chatmux.discord.DiscordService;
-import com.tterrag.chatmux.links.LinkManager;
+import com.tterrag.chatmux.links.JsonBackedLinkManager;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
@@ -52,7 +53,7 @@ public class DiscordCommandHandler implements CommandHandler, Connectable {
     public Mono<Void> start() {
         Mono<Void> readyListener = client.getEventDispatcher()
                 .on(ReadyEvent.class)
-                .doOnNext($ -> manager.readLinks())
+                .flatMap(e -> manager.readLinks().thenReturn(e))
                 .flatMapIterable($ -> this.listeners)
                 .flatMap(l -> l.onServiceAvailable(this))
                 .then();

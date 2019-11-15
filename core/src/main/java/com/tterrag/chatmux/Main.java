@@ -16,7 +16,7 @@ import com.tterrag.chatmux.api.wiretap.WiretapPlugin;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.ConfigData;
 import com.tterrag.chatmux.config.ConfigReader;
-import com.tterrag.chatmux.links.LinkManager;
+import com.tterrag.chatmux.links.JsonBackedLinkManager;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Hooks;
@@ -67,7 +67,9 @@ public class Main {
         log.info("Loaded command listeners: {}", commandListeners);
         
         log.info("Delegating to main interface: {}", Main.cfg.getMain());
-        return Main.cfg.getMain().getInterface(new LinkManager(wiretaps))
+        return Main.cfg.getMain().getInterface()
+                .doOnNext(iface -> commandListeners.forEach(l -> l.setAdmins(iface.getAdmins())))
+                .flatMap(iface -> iface.getCommandHandler(new JsonBackedLinkManager(wiretaps)))
                 .doOnNext(ch -> commandListeners.forEach(ch::addListener))
                 .flatMap(CommandHandler::start);
     }

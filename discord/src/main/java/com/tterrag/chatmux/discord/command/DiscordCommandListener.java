@@ -6,11 +6,11 @@ import com.tterrag.chatmux.api.bridge.ChatChannel;
 import com.tterrag.chatmux.api.bridge.ChatMessage;
 import com.tterrag.chatmux.api.command.CommandContext;
 import com.tterrag.chatmux.api.command.CommandListener;
+import com.tterrag.chatmux.api.link.Link;
+import com.tterrag.chatmux.api.link.LinkManager;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.bridge.ChatChannelImpl;
 import com.tterrag.chatmux.discord.DiscordService;
-import com.tterrag.chatmux.links.LinkManager;
-import com.tterrag.chatmux.links.LinkManager.Link;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

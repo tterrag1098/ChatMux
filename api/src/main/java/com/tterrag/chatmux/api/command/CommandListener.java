@@ -1,5 +1,7 @@
 package com.tterrag.chatmux.api.command;
 
+import java.util.Set;
+
 import org.pf4j.ExtensionPoint;
 
 import com.tterrag.chatmux.api.bridge.ChatMessage;
@@ -17,4 +19,6 @@ public interface CommandListener extends ExtensionPoint {
 
     Mono<Boolean> canHandle(String command, String args);
 
+    default void setAdmins(Set<String> admins) {
+    }
 }
