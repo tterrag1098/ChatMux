@@ -5,6 +5,7 @@ build/
 logs/
 chatmux.toml
 links.json
+pollster.json
 *.factorypath
 **/plugins/*
 
