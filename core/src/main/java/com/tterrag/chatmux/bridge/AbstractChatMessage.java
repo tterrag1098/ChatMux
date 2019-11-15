@@ -23,19 +23,22 @@ public abstract class AbstractChatMessage<M extends ChatMessage<M>> implements C
     @Getter(onMethod = @__({@Override}))
     String user;
     @Getter(onMethod = @__({@Override}))
+    String userId;
+    @Getter(onMethod = @__({@Override}))
     String content;
     
     @Nullable String avatar;
     
     protected AbstractChatMessage(ChatService<M> type, String channel, String user, String content, @Nullable String avatar) {
-        this(type, channel, channel, user, content, avatar);
+        this(type, channel, channel, user, user, content, avatar);
     }
     
-    protected AbstractChatMessage(ChatService<M> type, String channel, String channelId, String user, String content, @Nullable String avatar) {
+    protected AbstractChatMessage(ChatService<M> type, String channel, String channelId, String user, String userId, String content, @Nullable String avatar) {
         this.service = type;
         this.channel = channel;
         this.channelId = channelId;
         this.user = user;
+        this.userId = userId;
         this.content = content;
         this.avatar = avatar;
     }

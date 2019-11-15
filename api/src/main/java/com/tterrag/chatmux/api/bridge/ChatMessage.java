@@ -12,6 +12,8 @@ public interface ChatMessage<M extends ChatMessage<M>> {
     
     String getUser();
     
+    String getUserId();
+    
     String getContent();
     
     String getAvatar();

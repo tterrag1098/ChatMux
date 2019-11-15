@@ -83,7 +83,7 @@ public class DiscordMessage extends AbstractChatMessage<DiscordMessage> {
     private final Message message;
     
     private DiscordMessage(String rawContent, String content, Guild guild, TextChannel channel, Member author, Message msg) {
-        super(DiscordService.getInstance(), "#" + channel.getName(), channel.getId().asString(), author.getDisplayName(), content, author.getAvatarUrl());
+        super(DiscordService.getInstance(), "#" + channel.getName(), channel.getId().asString(), author.getDisplayName(), author.getId().asString(), content, author.getAvatarUrl());
         this.rawContent = rawContent;
         this.guild = guild;
         this.channel = channel;

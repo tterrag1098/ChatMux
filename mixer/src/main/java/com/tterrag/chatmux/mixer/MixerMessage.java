@@ -29,7 +29,7 @@ public class MixerMessage extends AbstractChatMessage<MixerMessage> {
     }
     
     public MixerMessage(MixerRequestHelper helper, WebSocketClient<?, MixerMethod> client, UUID messageId, int userId, String channelName, int channelId, String username, String content, @Nullable String avatar) {
-        super(MixerService.getInstance(), channelName, "" + channelId, username, content, avatar);
+        super(MixerService.getInstance(), channelName, "" + channelId, username, Integer.toString(userId), content, avatar);
         this.helper = helper;
         this.client = client;
         this.id = messageId;

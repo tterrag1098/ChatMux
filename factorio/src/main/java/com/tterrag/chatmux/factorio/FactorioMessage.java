@@ -8,7 +8,7 @@ public class FactorioMessage extends AbstractChatMessage<FactorioMessage> {
     boolean action;
     
     public FactorioMessage(String username, String team, String message, boolean action) {
-        super(FactorioService.getInstance(), team, team, username, message, null);
+        super(FactorioService.getInstance(), team, username, message, null);
         this.action = action;
     }
     
