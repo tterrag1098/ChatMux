@@ -74,7 +74,6 @@ public class TwitchSource implements ChatSource<TwitchMessage> {
         synchronized (this) {
             if (messageRelay == null) {
                 messageRelay = receive.inbound().ofType(IRCEvent.Message.class)
-                        .filter(e -> e.getChannel().equals(lcChan))
                         .filter(e -> !sentMessages.remove(e.getContent()))
                         .flatMap(e -> helper.getUser(e.getUser())
                                             .zipWith(helper.getUser(e.getChannel()),
@@ -82,7 +81,9 @@ public class TwitchSource implements ChatSource<TwitchMessage> {
                         .doOnTerminate(() -> { synchronized(TwitchSource.this) { messageRelay = null; }})
                         .share();
             }
-            return Flux.merge(pingPongSend, pingPongReceive, messageRelay).ofType(TwitchMessage.class);
+            return Flux.merge(pingPongSend, pingPongReceive, messageRelay)
+                    .ofType(TwitchMessage.class)
+                    .filter(e -> e.getChannel().equals(lcChan));
         }
     }
     
