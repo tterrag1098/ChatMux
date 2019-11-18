@@ -1,5 +1,7 @@
 package com.tterrag.chatmux.twitch;
 
+import java.util.Locale;
+
 import org.pf4j.Extension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +12,7 @@ import com.tterrag.chatmux.config.SimpleServiceConfig;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import reactor.core.publisher.Mono;
 
 @Extension
 public class TwitchService extends AbstractChatService<TwitchMessage, TwitchSource> {
@@ -32,6 +35,18 @@ public class TwitchService extends AbstractChatService<TwitchMessage, TwitchSour
     @Override
     public ServiceConfig<?> getConfig() {
         return new SimpleServiceConfig<>(TwitchData::new, this::setData);
+    }
+    
+    @Override
+    public Mono<String> parseChannel(String channel) {
+        return super.parseChannel(channel.toLowerCase(Locale.ROOT));
+    }
+    
+    @Override
+    public Mono<String> prettifyChannel(String channel) {
+        return getSource().getHelper()
+                .getUser(channel)
+                .map(ur -> ur.displayName);
     }
     
     private static TwitchService instance;

@@ -13,6 +13,8 @@ import com.tterrag.chatmux.twitch.irc.IRCEvent;
 import com.tterrag.chatmux.websocket.SimpleFrameParser;
 import com.tterrag.chatmux.websocket.SimpleWebSocketClient;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -23,6 +25,8 @@ import reactor.util.annotation.NonNull;
 @Slf4j
 public class TwitchSource implements ChatSource<TwitchMessage> {
     
+    @NonNull
+    @Getter(AccessLevel.PACKAGE)
     private final TwitchRequestHelper helper;
     private boolean connected;
 
