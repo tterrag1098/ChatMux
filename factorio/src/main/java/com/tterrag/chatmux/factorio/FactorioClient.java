@@ -74,6 +74,7 @@ public class FactorioClient {
         Tailer tailer = new Tailer(input, new TailerListenerAdapter() {
             @Override
             public void handle(@Nullable String line) {
+                log.debug("Processing input: " + line);
                 line = line == null ? "" : line.trim();
                 Matcher m = CHAT_MSG.matcher(line);
                 if (m.matches()) {
@@ -96,6 +97,7 @@ public class FactorioClient {
           
             @Override
             public void handle(@Nullable Exception ex) {
+                log.error("Exception from factorio output tailer", ex);
                 inboundSink.next(new FactorioMessage("ERROR", GLOBAL_TEAM, ex == null ? "Unknown" : ex.toString(), false));
             }
             
@@ -108,7 +110,7 @@ public class FactorioClient {
         return Mono.fromRunnable(tailer::run)
           .subscribeOn(Schedulers.newSingle("Factorio chat reader", true))
           .doOnCancel(() -> {
-              log.info("Chat reader canceled");
+              log.error("Chat reader canceled");
               tailer.stop();
           })
           .zipWith(outbound.flatMap(s -> 
@@ -117,7 +119,9 @@ public class FactorioClient {
                       out.write((s + "\n").getBytes());
                   }
                   return s;
-              }).doOnError(t -> inboundSink.next(new FactorioMessage("ERROR", GLOBAL_TEAM, t.toString(), false)))
+              })
+              .doOnError(t -> inboundSink.next(new FactorioMessage("ERROR", GLOBAL_TEAM, t.toString(), false)))
+              .doOnError(t -> log.error("Exception from factorio output", t))
           ).then())
           .then();
     }
