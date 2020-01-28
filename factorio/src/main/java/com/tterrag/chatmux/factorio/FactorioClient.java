@@ -80,6 +80,9 @@ public class FactorioClient {
                 if (m.matches()) {
                     String type = m.group("type");
                     String team = "SHOUT".equals(type) ? GLOBAL_TEAM : m.group("team");
+                    if (team == null) {
+                        team = GLOBAL_TEAM;
+                    }
                     inboundSink.next(new FactorioMessage(m.group("user"), team, m.group("message"), false));
                     return;
                 }
