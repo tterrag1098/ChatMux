@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
 
+import emoji4j.EmojiUtils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
@@ -83,7 +84,7 @@ public class FactorioClient {
                     if (team == null) {
                         team = GLOBAL_TEAM;
                     }
-                    inboundSink.next(new FactorioMessage(m.group("user"), team, m.group("message"), false));
+                    inboundSink.next(new FactorioMessage(m.group("user"), team, EmojiUtils.emojify(m.group("message")), false));
                     return;
                 }
                 m = JOIN_LEAVE_MSG.matcher(line);
@@ -119,7 +120,7 @@ public class FactorioClient {
           .zipWith(outbound.flatMap(s -> 
               Mono.fromCallable(() -> {
                   try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(output))) {
-                      out.write((s + "\n").getBytes());
+                      out.write((EmojiUtils.shortCodify(s) + "\n").getBytes());
                   }
                   return s;
               })
