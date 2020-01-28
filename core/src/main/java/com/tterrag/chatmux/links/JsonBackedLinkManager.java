@@ -102,7 +102,7 @@ public class JsonBackedLinkManager implements LinkManager {
                 .flatMap(m -> to.getService().getSource().send(to.getName(), m, raw)
                         .doOnError(t -> log.error("Exception processing message", t))
                         .onErrorResume(t -> Mono.empty()))
-                .subscribe();
+                .subscribe(t -> log.error("Unexpected exception from connection " + from + " -> " + to, t));
     }
     
     @Override
