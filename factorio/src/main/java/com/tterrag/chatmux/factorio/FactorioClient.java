@@ -32,7 +32,7 @@ public class FactorioClient {
     private static final Pattern CHAT_MSG = Pattern.compile(
             TIMESTAMP_REGEX + "\\s"
             + "\\[(?<type>CHAT|SHOUT)\\]\\s"
-            + "(?!<server>)(?<user>\\S+)\\s*"
+            + "(?!<server>)(?<user>[^\\S:]+)\\s*"
             + "(?:\\[(?<team>[^\\]]+)\\])?\\s*"
             + "(?:\\(shout\\))?:\\s*"
             + "(?<message>.+)$"
@@ -41,14 +41,14 @@ public class FactorioClient {
     private static final Pattern JOIN_LEAVE_MSG = Pattern.compile(    
             TIMESTAMP_REGEX + "\\s"
             + "\\[(?<type>JOIN|LEAVE)\\]\\s"
-            + "(?<user>\\S+)\\s"
+            + "(?<user>[^\\S:]+)\\s"
             + "(?<message>.+)$"
     );
     
     private static final Pattern COMMAND_MSG = Pattern.compile(
             TIMESTAMP_REGEX + "\\s"
             + "\\[(?<type>COMMAND)\\]\\s"
-            + "(?!<server>)(?<user>\\S+)\\s*"
+            + "(?!<server>)(?<user>[^\\S:]+)\\s*"
             + "(?:\\[(?<team>[^\\]]+)\\])?\\s*"
             + "(?:\\(command\\)):\\s*"
             + "(?<message>.+)$"
