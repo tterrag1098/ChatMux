@@ -71,6 +71,8 @@ public class Main {
                 .doOnNext(iface -> commandListeners.forEach(l -> l.setAdmins(iface.getService(), iface.getAdmins())))
                 .flatMap(iface -> iface.getCommandHandler(new JsonBackedLinkManager(wiretaps)))
                 .doOnNext(ch -> commandListeners.forEach(ch::addListener))
-                .flatMap(CommandHandler::start);
+                .flatMap(CommandHandler::start)
+                .doOnError(t -> log.error("Exception starting interface", t))
+                .onErrorResume($ -> Mono.empty());
     }
 }
