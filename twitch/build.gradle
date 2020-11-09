@@ -11,5 +11,6 @@ shadowJar {
     enabled = true
 	dependencies {
     	exclude(dependency(':core'))
+    	exclude(dependency(':api'))
     }
 }
