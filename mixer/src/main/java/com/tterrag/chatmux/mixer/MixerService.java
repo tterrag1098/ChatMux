@@ -61,6 +61,6 @@ public class MixerService extends AbstractChatService<MixerMessage, MixerSource>
         return getSource().getHelper()
                 .getChannel(channel.getName())
                 .flatMap(c -> getSource().getHelper().getUser(c.userId))
-                .map(u -> u.username);
+                .map(u -> channel.getService().getName() + "/" + u.username);
     }
 }

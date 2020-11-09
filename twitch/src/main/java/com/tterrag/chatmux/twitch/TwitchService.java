@@ -48,7 +48,7 @@ public class TwitchService extends AbstractChatService<TwitchMessage, TwitchSour
     public Mono<String> prettifyChannel(ChatService<?> target, ChatChannel<?> channel) {
         return getSource().getHelper()
                 .getUser(channel.getName())
-                .map(ur -> ur.displayName);
+                .map(ur -> channel.getService().getName() + "/" + ur.displayName);
     }
     
     private static TwitchService instance;
