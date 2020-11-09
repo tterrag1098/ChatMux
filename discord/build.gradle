@@ -20,4 +20,7 @@ dependencies {
 shadowJar {
     mergeServiceFiles()
     enabled = true
+    dependencies {
+    	exclude(dependency(':core'))
+    }
 }
