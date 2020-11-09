@@ -121,6 +121,11 @@ subprojects {
             	artifact sourcesJar
         	}
     	}
+		repositories {
+			if (project.hasProperty('mavendir')) {
+				maven { url mavendir }
+			}
+		}
     }
 }
 
@@ -218,20 +223,8 @@ publishing {
         }
     }
     repositories {
-        if (project.hasProperty('maven_url')) {
-            if (project.hasProperty('maven_user') && project.hasProperty('maven_pass')) {
-                maven {
-                    url maven_url
-                    credentials {
-                        username maven_user
-                        password maven_pass
-                    }
-                }
-            } else {
-                maven { url maven_url }
-            }
-        } else {
-            mavenLocal()
+        if (project.hasProperty('mavendir')) {
+            maven { url mavendir }
         }
     }
 }
