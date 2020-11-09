@@ -5,6 +5,8 @@ import java.util.regex.Matcher;
 import org.pf4j.Extension;
 
 import com.tterrag.chatmux.api.bot.BotInterface;
+import com.tterrag.chatmux.api.bridge.ChatChannel;
+import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.config.ServiceConfig;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
@@ -66,9 +68,9 @@ public class DiscordService extends AbstractChatService<DiscordMessage, DiscordS
     }
     
     @Override
-    public Mono<String> prettifyChannel(String channel) {
-        return getSource().getClient().getChannelById(Snowflake.of(channel))
+    public Mono<String> prettifyChannel(ChatService<?> target, ChatChannel<?> channel) {
+        return getSource().getClient().getChannelById(Snowflake.of(channel.getName()))
                 .cast(GuildChannel.class)
-                .map(c -> '#' + c.getName());
+                .map(c -> target == DiscordService.getInstance() ? c.getMention() : channel.getService().getName() + "/#" + c.getName());
     }
 }

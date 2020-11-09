@@ -30,8 +30,8 @@ public interface ChatService<M extends ChatMessage<M>> {
      *            The internal channel ID
      * @return The pretty channel name for UIs
      */
-    default Mono<String> prettifyChannel(String channel) {
-        return Mono.just(channel);
+    default Mono<String> prettifyChannel(ChatService<?> target, ChatChannel<?> channel) {
+        return Mono.just(channel.getService().getName() + "/" + channel.getName());
     }
 
 }

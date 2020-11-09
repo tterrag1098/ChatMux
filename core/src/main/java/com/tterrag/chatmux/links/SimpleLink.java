@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tterrag.chatmux.api.bridge.ChatChannel;
+import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.link.Link;
 import com.tterrag.chatmux.bridge.ChatChannelImpl;
 
@@ -44,9 +45,9 @@ public class SimpleLink implements Link {
     }
     
     @Override
-    public Mono<String> prettyPrint() {
-        return from.getService().prettifyChannel(from.getName())
-                .zipWith(to.getService().prettifyChannel(to.getName()),
-                        (fromName, toName) -> from.getService().getName() + "/" + fromName + " -> " + to.getService().getName() + "/" + toName + (raw ? " (raw)" : ""));
+    public Mono<String> prettyPrint(ChatService<?> target) {
+        return from.getService().prettifyChannel(target, from)
+                .zipWith(to.getService().prettifyChannel(target, to),
+                        (fromName, toName) -> fromName + " -> " + toName + (raw ? " (raw)" : ""));
     }
 }

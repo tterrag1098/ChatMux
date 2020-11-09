@@ -3,6 +3,8 @@ package com.tterrag.chatmux.mixer;
 import org.pf4j.Extension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tterrag.chatmux.api.bridge.ChatChannel;
+import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.config.ServiceConfig;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
@@ -55,9 +57,9 @@ public class MixerService extends AbstractChatService<MixerMessage, MixerSource>
     }
     
     @Override
-    public Mono<String> prettifyChannel(String channel) {
+    public Mono<String> prettifyChannel(ChatService<?> target, ChatChannel<?> channel) {
         return getSource().getHelper()
-                .getChannel(channel)
+                .getChannel(channel.getName())
                 .flatMap(c -> getSource().getHelper().getUser(c.userId))
                 .map(u -> u.username);
     }

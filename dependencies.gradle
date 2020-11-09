@@ -10,7 +10,7 @@ ext {
         logback : '1.2.3',
         
         // Configuration
-        nightConfig : '3.6.1',
+        nightConfig : '3.6.3',
         
         // Utilities
         guava     : '17.0',

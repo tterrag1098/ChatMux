@@ -52,7 +52,7 @@ public class DiscordCommandListener implements CommandListener {
 
             return sources
                    .map(t -> manager.addLink(t.getT1(), t.getT2(), raw, manager.connect(t.getT1(), t.getT2(), raw)))
-                   .flatMap(Link::prettyPrint)
+                   .flatMap(link -> link.prettyPrint(DiscordService.getInstance()))
                    .flatMap(link -> ctx.reply("Link established! " + link))
                    .doOnError(t -> log.error("Exception establishing link", t))
                    .onErrorResume(IllegalArgumentException.class, e -> ctx.reply(e.getMessage()))
@@ -64,7 +64,7 @@ public class DiscordCommandListener implements CommandListener {
             Mono<Tuple2<ChatChannel<?>, ChatChannel<?>>> sources = Mono.zip(from, to);
 
             return sources.flatMapIterable(t -> manager.removeLink(t.getT1(), t.getT2()))
-                    .flatMap(Link::prettyPrint)
+                    .flatMap(link -> link.prettyPrint(DiscordService.getInstance()))
                     .flatMap(link -> ctx.reply("Link broken! " + link))
                     .switchIfEmpty(ctx.reply("No such link to remove"))
                     .doOnError(t -> log.error("Exception removing link", t))
@@ -72,7 +72,7 @@ public class DiscordCommandListener implements CommandListener {
                     .then();
         } else if (command.equals("~links")) {
             return Flux.fromIterable(manager.getLinks())
-                    .flatMap(Link::prettyPrint)
+                    .flatMap(link -> link.prettyPrint(DiscordService.getInstance()))
                     .collect(Collectors.joining("\n"))
                     .flatMap(msg -> ctx.reply(msg.length() == 0 ? "No links!" : msg.toString()));
         }
