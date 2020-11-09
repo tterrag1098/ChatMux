@@ -55,23 +55,11 @@ allprojects {
     }
     
     publishing {
-    	repositories {
-	        if (project.hasProperty('maven2_url')) {
-	            if (project.hasProperty('maven2_user') && project.hasProperty('maven2_pass')) {
-	                maven {
-	                    url maven2_url
-	                    credentials {
-	                        username maven2_user
-	                        password maven2_pass
-	                    }
-	                }
-	            } else {
-	                maven { url maven2_url }
-	            }
-	        } else {
-	            mavenLocal()
-	        }
-	    }
+		repositories {
+			if (project.hasProperty('mavendir')) {
+				maven { url mavendir }
+			}
+		}
 	}
 }
 
@@ -121,11 +109,6 @@ subprojects {
             	artifact sourcesJar
         	}
     	}
-		repositories {
-			if (project.hasProperty('mavendir')) {
-				maven { url mavendir }
-			}
-		}
     }
 }
 
@@ -220,11 +203,6 @@ publishing {
         mavenJava(MavenPublication) {
             artifact allJar
             artifact mergedSourcesJar
-        }
-    }
-    repositories {
-        if (project.hasProperty('mavendir')) {
-            maven { url mavendir }
         }
     }
 }
