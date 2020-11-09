@@ -219,4 +219,9 @@ publishing {
             artifact mergedSourcesJar
         }
     }
+	repositories {
+        if (project.hasProperty('mavendir')) {
+            maven { url mavendir }
+        }
+    }
 }
