@@ -14,11 +14,11 @@ import com.tterrag.chatmux.api.link.LinkManager;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.discord.DiscordMessage;
 import com.tterrag.chatmux.discord.DiscordService;
-import com.tterrag.chatmux.links.JsonBackedLinkManager;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.entity.GuildMessageChannel;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
 import lombok.Getter;
@@ -60,7 +60,7 @@ public class DiscordCommandHandler implements CommandHandler, Connectable {
         
         Mono<Void> commandListener = client.getEventDispatcher()
                 .on(MessageCreateEvent.class)
-                .flatMap(mc -> Mono.zip(mc.getMessage().getChannel().cast(TextChannel.class), Mono.justOrEmpty(mc.getMessage().getAuthor()))
+                .flatMap(mc -> Mono.zip(mc.getMessage().getChannel().cast(GuildMessageChannel.class), Mono.justOrEmpty(mc.getMessage().getAuthor()))
                         .flatMap(t -> runCommand(t.getT1(), t.getT2(), mc.getMessage().getContent().orElse(""))
                                 .doOnError(ex -> log.error("Exception handling discord commands:", ex))
                                 .onErrorResume($ -> Mono.empty())))
@@ -77,7 +77,7 @@ public class DiscordCommandHandler implements CommandHandler, Connectable {
         return Tuples.of(command, args);
     }
 
-    private Mono<Void> runCommand(TextChannel textChannel, User user, String content) {
+    private Mono<Void> runCommand(GuildMessageChannel textChannel, User user, String content) {
         Tuple2<String, String> split = splitInput(content);
         return Flux.fromIterable(listeners)
                 .flatMap(l -> l.runCommand(split.getT1(), new Context(split.getT2(), textChannel.getId().asString(), user.getId().asString(), textChannel)))
@@ -112,7 +112,7 @@ public class DiscordCommandHandler implements CommandHandler, Connectable {
         @Getter(onMethod = @__({@Override}))
         String userId;
         
-        TextChannel channel;
+        GuildMessageChannel channel;
         
         @Override
         public DiscordService getService() {
