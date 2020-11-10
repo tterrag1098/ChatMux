@@ -1,16 +1,11 @@
 dependencies {
-    implementation project(':utils')
-    implementation project(':core')
+    compileOnly project(':core')
+    proj project(':core')
     
     annotationProcessor libs.pf4j
     annotationProcessor libs.lombok
 }
 
 shadowJar {
-    mergeServiceFiles()
     enabled = true
-	dependencies {
-    	exclude(dependency(':core'))
-    	exclude(dependency(':api'))
-    }
 }

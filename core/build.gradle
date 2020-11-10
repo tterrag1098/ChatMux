@@ -15,6 +15,7 @@ dependencies {
     implementation libs.logback
     
     api project(':api')
+    api project(':utils')
     
     annotationProcessor libs.lombok
     annotationProcessor libs.pf4j
@@ -25,7 +26,6 @@ jar.manifest {
 }
 
 shadowJar {
-    mergeServiceFiles()
     dependencies {
         exclude dependency('org.projectlombok:lombok')
     }

@@ -1,7 +1,11 @@
 dependencies {
-    implementation project(':utils')
-    implementation project(':core')
+    compileOnly project(':core')
+    proj project(':core')
     
     annotationProcessor libs.pf4j
     annotationProcessor libs.lombok
+}
+
+shadowJar {
+	enabled = true
 }

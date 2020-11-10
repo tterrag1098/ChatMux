@@ -77,10 +77,27 @@ subprojects {
         archives sourcesJar
     }
 
+	configurations {
+		proj.extendsFrom implementation
+		proj.transitive = false
+	}
+
+	apply plugin: 'eclipse'
+
+	eclipse {
+		classpath {
+			plusConfigurations += [ configurations.compileOnly ]
+		}
+	}
+
     build.dependsOn sourcesJar
     
-    // Not necessary for anything but core, atm. Find a way to exclude transitive deps?
-    shadowJar.enabled = false
+	shadowJar {
+		enabled = false
+		configurations = [project.configurations.runtimeClasspath]
+		mergeServiceFiles()
+		
+	}
     
     task genFactoryPath {
         doFirst {

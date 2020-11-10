@@ -1,5 +1,6 @@
 dependencies {
-    implementation project(':core')
+    compileOnly project(':core')
+    proj project(':core')
     implementation libs.emoji4j
     
     annotationProcessor libs.pf4j
@@ -7,6 +8,5 @@ dependencies {
 }
 
 shadowJar {
-    mergeServiceFiles()
     enabled = true
 }
