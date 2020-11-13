@@ -63,7 +63,9 @@ public class DiscordCommandHandler implements CommandHandler, Connectable {
                 .flatMap(mc -> Mono.zip(mc.getMessage().getChannel().cast(GuildMessageChannel.class), Mono.justOrEmpty(mc.getMessage().getAuthor()))
                         .flatMap(t -> runCommand(t.getT1(), t.getT2(), mc.getMessage().getContent().orElse(""))
                                 .doOnError(ex -> log.error("Exception handling discord commands:", ex))
-                                .onErrorResume($ -> Mono.empty())))
+                                .onErrorResume($ -> Mono.empty()))
+                        .doOnError(ex -> log.error("Exception getting message data:", ex))
+                        .onErrorResume($ -> Mono.empty()))
                 .doOnError(t -> log.error("Exception handling message create", t))
                 .then();
 
