@@ -21,42 +21,32 @@ public class TwitchRequestHelper extends RequestHelper {
     private final String token;
     
     public TwitchRequestHelper(ObjectMapper mapper, String token) {
-        super(mapper, "https://api.twitch.tv/helix");
+        super(mapper, "https://api.twitch.tv/kraken");
         this.token = token;
     }
 
     @Override
     protected void addHeaders(HttpHeaders headers) {
-        headers.add("Authorization", "Bearer " + token);
+        headers.add("Client-ID", "c66mvjdtax9fo10ghse234vpheonhz");
         headers.add("Content-Type", "application/json");
         headers.add("User-Agent", "TwitchBot (https://tropicraft.net, 1.0)");
+        headers.add("Accept", "application/vnd.twitchtv.v5+json");
     }
     
     public Mono<UserResponse> getUser(int id) {
-        return getUsers(id).next();
+        return get("/users/" + id, UserResponse.class);
     }
-    
-    public Flux<UserResponse> getUsers(int... ids) {
-        return getUsers(ids, new String[0]);
-    }
-    
+
     public Mono<UserResponse> getUser(String login) {
         return getUsers(login).next();
     }
     
     public Flux<UserResponse> getUsers(String... logins) {
-        return getUsers(new int[0], logins);
-    }
-    
-    public Flux<UserResponse> getUsers(int[] ids, String[] logins) {
-        String args = "?" + 
-            Stream.concat(
-                        Arrays.stream(ids).mapToObj(Integer::toString).map(s -> "id=" + s),
-                        Arrays.stream(logins).map(s -> "login=" + s))
+        String args = "?" + Arrays.stream(logins).map(s -> "login=" + s)
                   .collect(Collectors.joining("&"));
         
         return get("/users" + args, JsonNode.class)
-                .map(node -> node.get("data"))
+                .map(node -> node.get("users"))
                 .map(node -> {
                     try {
                         return mapper.readValue(node.toString(), UserResponse[].class);
