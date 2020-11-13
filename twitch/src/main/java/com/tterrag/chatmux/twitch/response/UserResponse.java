@@ -9,10 +9,12 @@ import lombok.ToString;
 @ToString
 public class UserResponse {
 
+    @JsonProperty("_id")
     public String id;
+    @JsonProperty("name")
     public String login;
     @JsonProperty("display_name")
     public String displayName;
-    @JsonProperty("profile_image_url")
+    @JsonProperty("logo")
     public String avatarUrl;
 }
