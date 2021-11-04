@@ -60,7 +60,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     private final DiscordRequestHelper helper;
     
     @NonNull
-    private final Flux<DiscordMessage> messageSource;
+    private final Flux<MessageCreateEvent> messageSource;
     
     DiscordSource(String token) {
         this.client = new DiscordClientBuilder(token).build();
@@ -74,8 +74,6 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
                 .filterWhen(e -> commandHandler.map(ch -> ch.canHandle(DiscordService.getInstance(), e.getMessage().getContent().get()))
                         .orElse(Mono.just(Boolean.FALSE))
                         .map(t -> !t))
-                .flatMap(e -> e.getMessage().getChannel().ofType(TextChannel.class).map(c -> Tuples.of(e, c)))
-                .flatMap(t -> DiscordMessage.create(t.getT1().getMessage()))
                 .share();
     }
 
@@ -87,7 +85,10 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     @Override
     public Flux<DiscordMessage> connect(String channel) {
         // Discord bots do not "join" channels so we only need to return the flux of messages
-        return messageSource.filter(m -> m.getChannelId().equals(channel));
+        return messageSource
+                .filter(e -> e.getMessage().getChannelId().asString().equals(channel))
+                .flatMap(e -> e.getMessage().getChannel().ofType(TextChannel.class).map(c -> Tuples.of(e, c)))
+                .flatMap(t -> DiscordMessage.create(t.getT1().getMessage()));
     }
     
     @Override

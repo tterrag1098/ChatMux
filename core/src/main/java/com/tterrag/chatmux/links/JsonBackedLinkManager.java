@@ -77,6 +77,7 @@ public class JsonBackedLinkManager implements LinkManager {
                 if (file.exists()) {
                     List<SimpleLink> allLinks = new ObjectMapper().readValue(new File("links.json"), new TypeReference<List<SimpleLink>>() {});
                     allLinks.stream()
+                        .filter(link -> link.getFrom().getService() != null && link.getTo().getService() != null)
                         .map(this::connect)
                         .forEach(this::addLink);
                 }
