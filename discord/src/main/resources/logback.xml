@@ -5,9 +5,7 @@
   
   <appender name="FILE-D4J" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/d4j.log</file>
-    
-    <filter class="com.tterrag.chatmux.logging.FrameDecoderFilter" />
-        
+            
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <!-- daily rollover -->
       <fileNamePattern>logs/d4j.%d{yyyy-MM-dd}.log</fileNamePattern>

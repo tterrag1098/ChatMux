@@ -8,7 +8,7 @@ import com.tterrag.chatmux.api.bridge.ChatService;
 import com.tterrag.chatmux.api.command.CommandHandler;
 import com.tterrag.chatmux.api.link.LinkManager;
 
-import discord4j.core.object.util.Snowflake;
+import discord4j.common.util.Snowflake;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 

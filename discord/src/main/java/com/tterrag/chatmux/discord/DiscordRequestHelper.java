@@ -11,16 +11,15 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.io.ByteStreams;
 import com.tterrag.chatmux.util.http.RequestHelper;
 
-import discord4j.common.jackson.PossibleModule;
-import discord4j.common.json.MessageResponse;
-import discord4j.core.DiscordClient;
-import discord4j.core.object.data.stored.MessageBean;
+import discord4j.common.util.Snowflake;
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.Webhook;
-import discord4j.core.object.util.Image;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.discordjson.json.MessageData;
+import discord4j.discordjson.possible.PossibleModule;
 import discord4j.rest.route.Routes;
+import discord4j.rest.util.Image;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import reactor.core.publisher.Mono;
@@ -28,10 +27,10 @@ import reactor.util.annotation.NonNull;
 
 public class DiscordRequestHelper extends RequestHelper {
     
-    private final DiscordClient client;
+    private final GatewayDiscordClient client;
     private final String token;
     
-    public DiscordRequestHelper(DiscordClient client, String token) {
+    public DiscordRequestHelper(GatewayDiscordClient client, String token) {
         super(new ObjectMapper()
                 .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -80,7 +79,7 @@ public class DiscordRequestHelper extends RequestHelper {
     }
     
     public Mono<Message> executeWebhook(Snowflake snowflake, String token, String payload) {
-        return post("/webhooks/" + snowflake.asString() + "/" + token + "?wait=true", payload, MessageResponse.class)
-                .map(r -> new Message(client.getServiceMediator(), new MessageBean(r)));
+        return post("/webhooks/" + snowflake.asString() + "/" + token + "?wait=true", payload, MessageData.class)
+                .map(r -> new Message(client, r));
     }
 }

@@ -23,16 +23,16 @@ import com.tterrag.chatmux.api.link.LinkManager;
 import com.tterrag.chatmux.discord.command.DiscordCommandHandler;
 import com.tterrag.chatmux.discord.util.WebhookMessage;
 
-import discord4j.core.DiscordClient;
+import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClientBuilder;
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.object.util.Snowflake;
 import emoji4j.EmojiUtils;
 import lombok.Getter;
 import reactor.core.publisher.Flux;
@@ -51,7 +51,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     
     @NonNull
     @Getter
-    private final DiscordClient client;
+    private final GatewayDiscordClient client;
     
     @NonNull
     private Optional<DiscordCommandHandler> commandHandler = Optional.empty();
@@ -63,18 +63,17 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     private final Flux<MessageCreateEvent> messageSource;
     
     DiscordSource(String token) {
-        this.client = new DiscordClientBuilder(token).build();
+        this.client = DiscordClientBuilder.create(token).build().gateway().login().block(); // TODO AAAAA
         this.helper = new DiscordRequestHelper(client, token);
 
         this.messageSource = client.getEventDispatcher()
-                .on(MessageCreateEvent.class)
-                .filter(e -> e.getMember().isPresent())
-                .filter(e -> e.getMessage().getAuthor().map(u -> !u.isBot()).orElse(true))
-                .filter(e -> e.getMessage().getContent().isPresent())
-                .filterWhen(e -> commandHandler.map(ch -> ch.canHandle(DiscordService.getInstance(), e.getMessage().getContent().get()))
-                        .orElse(Mono.just(Boolean.FALSE))
-                        .map(t -> !t))
-                .share();
+            .on(MessageCreateEvent.class)
+            .filter(e -> e.getMember().isPresent())
+            .filter(e -> e.getMessage().getAuthor().map(u -> !u.isBot()).orElse(true))
+            .filterWhen(e -> commandHandler.map(ch -> ch.canHandle(DiscordService.getInstance(), e.getMessage().getContent()))
+                .orElse(Mono.just(Boolean.FALSE))
+                .map(t -> !t))
+            .share();
     }
 
     @Override

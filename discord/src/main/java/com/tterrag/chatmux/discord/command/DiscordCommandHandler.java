@@ -15,12 +15,11 @@ import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.discord.DiscordMessage;
 import com.tterrag.chatmux.discord.DiscordService;
 
-import discord4j.core.DiscordClient;
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.entity.GuildMessageChannel;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.GuildMessageChannel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
@@ -35,14 +34,14 @@ import reactor.util.function.Tuples;
 @Slf4j
 public class DiscordCommandHandler implements CommandHandler, Connectable {
     
-    private final DiscordClient client;
+    private final GatewayDiscordClient client;
     private final LinkManager manager;
     private final DiscordCommandListener baseListener;
     
     @NonNull
     private final Set<CommandListener> listeners = Sets.newConcurrentHashSet();
     
-    public DiscordCommandHandler(DiscordClient client, LinkManager manager) {
+    public DiscordCommandHandler(GatewayDiscordClient client, LinkManager manager) {
         this.client = client;
         this.manager = manager;
         this.baseListener = new DiscordCommandListener(manager);
@@ -61,7 +60,7 @@ public class DiscordCommandHandler implements CommandHandler, Connectable {
         Mono<Void> commandListener = client.getEventDispatcher()
                 .on(MessageCreateEvent.class)
                 .flatMap(mc -> Mono.zip(mc.getMessage().getChannel().cast(GuildMessageChannel.class), Mono.justOrEmpty(mc.getMessage().getAuthor()))
-                        .flatMap(t -> runCommand(t.getT1(), t.getT2(), mc.getMessage().getContent().orElse(""))
+                        .flatMap(t -> runCommand(t.getT1(), t.getT2(), mc.getMessage().getContent())
                                 .doOnError(ex -> log.error("Exception handling discord commands:", ex))
                                 .onErrorResume($ -> Mono.empty()))
                         .doOnError(ex -> log.error("Exception getting message data:", ex))
@@ -69,7 +68,7 @@ public class DiscordCommandHandler implements CommandHandler, Connectable {
                 .doOnError(t -> log.error("Exception handling message create", t))
                 .then();
 
-        return Mono.when(readyListener, commandListener, client.login());
+        return Mono.when(readyListener, commandListener, client.onDisconnect());
     }
     
     private Tuple2<String, String> splitInput(String input) {

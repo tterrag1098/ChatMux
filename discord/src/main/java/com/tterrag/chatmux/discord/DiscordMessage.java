@@ -11,16 +11,16 @@ import org.reactivestreams.Publisher;
 
 import com.tterrag.chatmux.bridge.AbstractChatMessage;
 
-import discord4j.core.DiscordClient;
-import discord4j.core.object.entity.Channel;
+import discord4j.common.util.Snowflake;
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.GuildChannel;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.Role;
-import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.util.Snowflake;
+import discord4j.core.object.entity.channel.Channel;
+import discord4j.core.object.entity.channel.GuildChannel;
+import discord4j.core.object.entity.channel.TextChannel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -39,11 +39,11 @@ public class DiscordMessage extends AbstractChatMessage<DiscordMessage> {
                     message.getGuild(),
                     message.getChannel().cast(TextChannel.class),
                     message.getAuthorAsMember())
-                .flatMap(t -> stripAllMentions(message.getClient(), message.getContent().get(), t.getT2())
-                        .map(m -> new DiscordMessage(message.getContent().get(), m, t.getT1(), t.getT2(), t.getT3(), message)));
+                .flatMap(t -> stripAllMentions(message.getClient(), message.getContent(), t.getT2())
+                        .map(m -> new DiscordMessage(message.getContent(), m, t.getT1(), t.getT2(), t.getT3(), message)));
     }
     
-    private static Mono<String> stripAllMentions(DiscordClient client, String content, TextChannel channel) {
+    private static Mono<String> stripAllMentions(GatewayDiscordClient client, String content, TextChannel channel) {
         return Mono.just(content)
                 .flatMap(s -> stripMentions(CHANNEL_MENTION, 1, client::getChannelById, Channel::getId, c -> "#" + ((GuildChannel)c).getName(), s))
                 .flatMap(s -> stripMentions(USER_MENTION, 1, id -> client.getMemberById(channel.getGuildId(), id),

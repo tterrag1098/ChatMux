@@ -11,8 +11,8 @@ import com.tterrag.chatmux.api.config.ServiceConfig;
 import com.tterrag.chatmux.bridge.AbstractChatService;
 import com.tterrag.chatmux.config.SimpleServiceConfig;
 
-import discord4j.core.object.entity.GuildChannel;
-import discord4j.core.object.util.Snowflake;
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.channel.GuildChannel;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
