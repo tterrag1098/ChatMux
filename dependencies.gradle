@@ -1,7 +1,7 @@
 ext {
     versions = [
-        reactor      : '3.2.9.RELEASE',
-        reactorNetty : '0.8.8.RELEASE',
+        reactor      : '3.3.20.RELEASE',
+        reactorNetty : '0.9.23.RELEASE',
         jackson      : '2.9.8',
         d4j          : '3.1.8',
         

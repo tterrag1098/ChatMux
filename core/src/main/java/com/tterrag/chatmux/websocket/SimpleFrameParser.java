@@ -104,8 +104,8 @@ public class SimpleFrameParser<I, O> implements IFrameParser<I, O> {
         AtomicReference<CloseStatus> reason = new AtomicReference<>();
         in.withConnection(connection -> connection.addHandlerLast("client.last.closeHandler", new CloseHandlerAdapter(reason)));
     
-        Mono<Void> outSub = out.options(NettyPipeline.SendOptions::flushOnEach)
-            .sendObject(outboundExchange.log(log.getName() + ".out").map(serializer::apply).map(TextWebSocketFrame::new))
+        Mono<Void> outSub = out//.options(NettyPipeline.SendOptions::flushOnEach)
+            .sendObject(outboundExchange.log(log.getName() + ".out").map(serializer::apply).map(TextWebSocketFrame::new), $ -> true)
             .then()
             .doOnError(t -> log.debug("Sender encountered an error", t))
             .doOnSuccess(v -> log.debug("Sender succeeded"))
