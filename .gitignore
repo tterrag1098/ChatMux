@@ -1,13 +1,16 @@
 *.class
-data/
-.gradle/
-build/
+**/data/
+**/.gradle/
+**/build/
 logs/
-chatmux.toml
-links.json
-pollster.json
+**/chatmux.toml
+**/links.json
+**/pollster.json
 *.factorypath
 **/plugins/*
+followbots.csv
+*.bak
+*.old
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

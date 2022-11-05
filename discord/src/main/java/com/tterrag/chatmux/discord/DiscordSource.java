@@ -33,6 +33,8 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
+import discord4j.gateway.intent.Intent;
+import discord4j.gateway.intent.IntentSet;
 import emoji4j.EmojiUtils;
 import lombok.Getter;
 import reactor.core.publisher.Flux;
@@ -63,7 +65,9 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
     private final Flux<MessageCreateEvent> messageSource;
     
     DiscordSource(String token) {
-        this.client = DiscordClientBuilder.create(token).build().gateway().login().block(); // TODO AAAAA
+        this.client = DiscordClientBuilder.create(token).build().gateway()
+                .setEnabledIntents(IntentSet.of(Intent.GUILDS, Intent.GUILD_MESSAGES, Intent.GUILD_MESSAGE_REACTIONS))
+                .login().block(); // TODO AAAAA
         this.helper = new DiscordRequestHelper(client, token);
 
         this.messageSource = client.getEventDispatcher()
@@ -102,6 +106,7 @@ public class DiscordSource implements ChatSource<DiscordMessage> {
         if (usercheck.length() > 32) {
             usercheck = m.getUser() + " (" + m.getService().getName().substring(0, 1).toUpperCase(Locale.ROOT) + "/" + m.getChannel() + ")";
         }
+        usercheck = usercheck.replaceAll("(?i)discord", "DIS");
         final String username = usercheck;
         return helper.getWebhook(channel, "ChatMux", in)
                     .flatMap(wh -> discordify(channel, m).flatMap(msg -> helper.executeWebhook(wh, new WebhookMessage(msg, username, m.getAvatar()).toString()))).map(r -> Tuples.of(m, r))

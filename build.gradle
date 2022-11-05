@@ -6,7 +6,7 @@ buildscript {
 }
 
 plugins {
-  id 'java'
+  id 'java-library'
   id 'maven-publish'
   id 'com.github.johnrengelman.shadow' version '4.0.4'
   id 'org.ajoberstar.grgit' version '3.1.1'
@@ -26,7 +26,7 @@ if (System.getenv('BUILD_NUMBER') != null) {
 }
 
 allprojects {
-    apply plugin: 'java'
+    apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'com.github.johnrengelman.shadow'
 
@@ -45,6 +45,10 @@ allprojects {
         maven { url 'https://jitpack.io' }
         maven { url 'https://repo.spring.io/milestone' }
     }
+
+	dependencies {
+		api platform(libs.reactorBom)
+	}
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
@@ -76,13 +80,14 @@ subprojects {
 	configurations {
 		proj.extendsFrom implementation
 		proj.transitive = false
+		ec.extendsFrom compileOnly
 	}
 
 	apply plugin: 'eclipse'
 
 	eclipse {
 		classpath {
-			plusConfigurations += [ configurations.compileOnly ]
+			plusConfigurations += [ configurations.ec ]
 		}
 	}
 

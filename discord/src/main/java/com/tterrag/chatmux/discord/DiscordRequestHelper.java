@@ -75,7 +75,7 @@ public class DiscordRequestHelper extends RequestHelper {
     }
     
     public Mono<Message> executeWebhook(Webhook webhook, String payload) {
-        return executeWebhook(webhook.getId(), webhook.getToken(), payload);
+        return webhook.getToken().map(t -> executeWebhook(webhook.getId(), t, payload)).orElse(Mono.empty());
     }
     
     public Mono<Message> executeWebhook(Snowflake snowflake, String token, String payload) {
