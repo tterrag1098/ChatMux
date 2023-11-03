@@ -31,6 +31,7 @@ public class TwitchRequestHelper extends RequestHelper {
         headers.add("Content-Type", "application/json");
         headers.add("User-Agent", "TwitchBot (https://tropicraft.net, 1.0)");
         headers.add("Accept", "application/vnd.twitchtv.v5+json");
+        headers.add("Authorization", "Bearer " + TwitchService.getInstance().getData().getTokenReceive());
     }
     
     public Mono<UserResponse> getUser(int id) {
