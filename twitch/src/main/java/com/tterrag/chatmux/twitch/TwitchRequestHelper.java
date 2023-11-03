@@ -27,7 +27,7 @@ public class TwitchRequestHelper extends RequestHelper {
 
     @Override
     protected void addHeaders(HttpHeaders headers) {
-        headers.add("Client-ID", "c66mvjdtax9fo10ghse234vpheonhz");
+        headers.add("Client-ID", "q6batx0epp608isickayubi39itsckt");
         headers.add("Content-Type", "application/json");
         headers.add("User-Agent", "TwitchBot (https://tropicraft.net, 1.0)");
         headers.add("Accept", "application/vnd.twitchtv.v5+json");
