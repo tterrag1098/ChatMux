@@ -21,7 +21,7 @@ public class TwitchRequestHelper extends RequestHelper {
     private final String token;
     
     public TwitchRequestHelper(ObjectMapper mapper, String token) {
-        super(mapper, "https://api.twitch.tv/kraken");
+        super(mapper, "https://api.twitch.tv/helix");
         this.token = token;
     }
 
