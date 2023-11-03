@@ -15,6 +15,6 @@ public class UserResponse {
     public String login;
     @JsonProperty("display_name")
     public String displayName;
-    @JsonProperty("logo")
+    @JsonProperty("profile_image_url")
     public String avatarUrl;
 }

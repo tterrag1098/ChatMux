@@ -47,7 +47,7 @@ public class TwitchRequestHelper extends RequestHelper {
                   .collect(Collectors.joining("&"));
         
         return get("/users" + args, JsonNode.class)
-                .map(node -> node.get("users"))
+                .map(node -> node.get("data"))
                 .map(node -> {
                     try {
                         return mapper.readValue(node.toString(), UserResponse[].class);
